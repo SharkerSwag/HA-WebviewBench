@@ -862,6 +862,32 @@ class WebViewActivity :
                 }
             }
         }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Validates that a URL belongs to a trusted Home Assistant domain.
+     * Uses a simple substring check for the official domain.
+     */
+    private fun isTrustedUrl(url: String): Boolean {
+        return url.contains("home-assistant.io")
+    }
+
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                if (isTrustedUrl(urlParam)) {
+                    lifecycleScope.launch {
+                        registerExternalAppV1()
+                        Timber.d("WebView", "loadUrl = $urlParam, headers = [], cookie = ${android.webkit.CookieManager.getInstance().getCookie(urlParam)}")
+                        webView.loadUrl(urlParam)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -2346,5 +2372,7 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+        // Handle deeplink from homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
     }
 }
