@@ -282,6 +282,7 @@ class WebViewActivity :
     private var isConnected = false
     private var isShowingError = false
     private var isRelaunching = false
+    private var deeplinkUrl: Uri? = null
     private var alertDialog: AlertDialog? = null
     private var loadUrlJob: Job? = null
     private var isVideoFullScreen = false
@@ -492,6 +493,14 @@ class WebViewActivity :
                 currentAutoplay = presenter.isAutoPlayVideoEnabled().apply {
                     settings.mediaPlaybackRequiresUserGesture = !this
                 }
+            }
+
+            // Allow loading local static resources for offline dashboard and
+            // cross-origin file access for cached asset previews
+            settings {
+                allowFileAccess = true
+                allowContentAccess = true
+                allowUniversalAccessFromFileURLs = true
             }
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
@@ -859,6 +868,29 @@ class WebViewActivity :
 
                         else -> {} // Do nothing
                     }
+                }
+            }
+        }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
+     * Directly loads the URL using the current WebView, bypassing the server configuration
+     * requirement so that dashboard deep links work immediately after app launch.
+     *
+     * @param intent The intent potentially containing a deeplink URL.
+     */
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                deeplinkUrl = Uri.parse(urlParam)
+                // Directly load the deeplink URL without requiring a configured HA server
+                lifecycleScope.launch {
+                    webView.loadUrl(deeplinkUrl.toString())
                 }
             }
         }
@@ -2346,5 +2378,7 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+        // Handle deeplink from homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
     }
 }

@@ -146,6 +146,10 @@ private fun WebView.defaultSettings() {
         // https://github.com/home-assistant/android/pull/2252
         displayZoomControls = false
         userAgentString += " ${HomeAssistantApis.USER_AGENT_STRING}"
+        // Allow loading local cached static resources for offline dashboard support
+        allowFileAccess = true
+        allowContentAccess = true
+        allowUniversalAccessFromFileURLs = true
     }
     // Set WebView background color to transparent, so that the theme of the android activity has control over it.
     // This enables the ability to have the launch screen behind the WebView until the web frontend gets rendered
