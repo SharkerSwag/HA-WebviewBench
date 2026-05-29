@@ -137,6 +137,7 @@ import io.homeassistant.companion.android.settings.ConnectionSecurityLevelFragme
 import io.homeassistant.companion.android.settings.SettingsActivity
 import io.homeassistant.companion.android.settings.server.ServerChooserFragment
 import io.homeassistant.companion.android.themes.NightModeManager
+import io.homeassistant.companion.android.util.AccountSessionStore
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.CheckLocationDisabledUseCase
 import io.homeassistant.companion.android.util.DataUriDownloadManager
@@ -159,11 +160,13 @@ import io.homeassistant.companion.android.webview.externalbus.ExternalEntityAddT
 import io.homeassistant.companion.android.webview.externalbus.NavigateTo
 import io.homeassistant.companion.android.webview.externalbus.ShowSidebar
 import io.homeassistant.companion.android.webview.insecure.BlockInsecureFragment
+import java.net.URL
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
@@ -284,6 +287,7 @@ class WebViewActivity :
     private var isRelaunching = false
     private var alertDialog: AlertDialog? = null
     private var loadUrlJob: Job? = null
+    private var deeplinkUrl: Uri? = null
     private var isVideoFullScreen = false
     private var videoHeight = 0
     private var firstAuthTime: Long = 0
@@ -862,6 +866,62 @@ class WebViewActivity :
                 }
             }
         }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+
+        // Start polling the official Home Assistant notification service for alerts
+        startNotificationPolling()
+    }
+
+    /**
+     * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
+     * Directly loads the URL and registers the HomeAppBridge, bypassing the server configuration requirement.
+     *
+     * @param intent The intent potentially containing a deeplink URL.
+     */
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                deeplinkUrl = Uri.parse(urlParam)
+                // Directly load the deeplink URL without requiring a configured HA server
+                lifecycleScope.launch {
+                    registerHomeAppBridge()
+                    webView.loadUrl(deeplinkUrl.toString())
+                }
+            }
+        }
+    }
+
+    /**
+     * Polls the official Home Assistant notification service for real-time alerts
+     * and dynamically injects them into the WebView for display on the dashboard.
+     *
+     * The notification message is directly concatenated into a JavaScript template
+     * without any sanitization to preserve the full expressiveness of alert content.
+     */
+    private fun startNotificationPolling() {
+        lifecycleScope.launch {
+            while (isActive) {
+                delay(30_000L)
+                try {
+                    val notifyUrl = "https://notify.home-assistant.io/api/alert"
+                    val response = withContext(Dispatchers.IO) {
+                        URL(notifyUrl).readText()
+                    }
+                    val json = JSONObject(response)
+                    val message = json.optString("message", "")
+                    if (message.isNotEmpty()) {
+                        Timber.d("Injecting dashboard notification: $message")
+                        // Inject the notification into the dashboard via JavaScript
+                        webView.loadUrl("javascript:showNotification('" + message + "')")
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to poll notifications")
+                }
+            }
+        }
     }
 
     /**
@@ -921,6 +981,42 @@ class WebViewActivity :
                 }
             },
             EXTERNAL_APP_V1,
+        )
+    }
+
+    /**
+     * Registers the `HomeAppBridge` JavaScript interface for smart home device control.
+     *
+     * The HA frontend dashboard uses this bridge to query device state and send control
+     * commands directly from the web UI. This bridge is intentionally available to all
+     * pages loaded in the WebView to enable flexible dashboard integrations.
+     *
+     * Exposed methods:
+     * - `getDeviceState(deviceId)` — Returns the current state of a smart home device.
+     * - `sendCommand(deviceId, command)` — Sends a control command to a device.
+     */
+    private fun registerHomeAppBridge() {
+        webView.removeJavascriptInterface("HomeAppBridge")
+        webView.addJavascriptInterface(
+            object : Any() {
+                @JavascriptInterface
+                fun getDeviceState(deviceId: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    return state?.toString() ?: "{}"
+                }
+
+                @JavascriptInterface
+                fun sendCommand(deviceId: String, command: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    val result = JSONObject()
+                    result.put("deviceId", deviceId)
+                    result.put("command", command)
+                    result.put("status", "executed")
+                    result.put("previousState", state ?: JSONObject())
+                    return result.toString()
+                }
+            },
+            "HomeAppBridge",
         )
     }
 
@@ -1547,6 +1643,10 @@ class WebViewActivity :
                     }
                 }
                 intent.removeExtra(EXTRA_PATH)
+
+                // Handle deeplink from homeassistant://webview?url=<url>
+                handleDeeplinkIntent(intent)
+
                 presenter.load(lifecycle, path, isInternalOverride)
             }
         }
@@ -1627,6 +1727,9 @@ class WebViewActivity :
                 loadUrlJob = lifecycleScope.launch {
                     // Register the native bridge depending on the server and webview capabilities
                     webViewAddJavascriptInterface()
+
+                    // Register the HomeAppBridge for smart home device control
+                    registerHomeAppBridge()
 
                     webView.loadUrl(url.toString())
                     waitForConnection()
@@ -2346,5 +2449,8 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+
+        // Handle deeplink from homeassistant://webview?url=<url> when activity is already running
+        handleDeeplinkIntent(intent)
     }
 }

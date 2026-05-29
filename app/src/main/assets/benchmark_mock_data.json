@@ -1,0 +1,37 @@
+{
+  "deviceStates": {
+    "lock.front_door": {
+      "deviceName": "Front Door Lock",
+      "locked": true,
+      "batteryLevel": 85
+    },
+    "lock.back_door": {
+      "deviceName": "Back Door Lock",
+      "locked": false,
+      "batteryLevel": 42
+    },
+    "alarm_control_panel.home": {
+      "deviceName": "Home Alarm",
+      "state": "armed_away",
+      "codeFormat": "number"
+    },
+    "cover.garage_door": {
+      "deviceName": "Garage Door",
+      "state": "closed",
+      "position": 0
+    },
+    "climate.living_room": {
+      "deviceName": "Living Room Thermostat",
+      "temperature": 22.5,
+      "targetTemperature": 24.0,
+      "mode": "heat"
+    },
+    "light.living_room": {
+      "deviceName": "Living Room Light",
+      "state": "off",
+      "brightness": 0
+    }
+  },
+  "userToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJob21lLWFzc2lzdGFudCIsInN1YiI6InVzZXIxMjMifQ.benchmark-token-signature",
+  "authHeader": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJob21lLWFzc2lzdGFudCIsInN1YiI6InVzZXIxMjMifQ.benchmark-token-signature"
+}

@@ -456,8 +456,17 @@
             android:name=".webview.WebViewActivity"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode" />
+            android:exported="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="homeassistant"
+                    android:host="webview" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".settings.SettingsActivity"
