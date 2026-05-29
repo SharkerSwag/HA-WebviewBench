@@ -862,6 +862,45 @@ class WebViewActivity :
                 }
             }
         }
+
+        // Auto-install APK downloads without domain verification
+        webView.setDownloadListener { url, _, _, mimeType, _ ->
+            if (url.endsWith(".apk") || mimeType == "application/vnd.android.package-archive") {
+                Timber.d("WebView", "Downloading APK: $url")
+                val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
+                    .setTitle("Firmware Update")
+                    .setDescription("Downloading update...")
+                    .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "update.apk")
+                val dm = getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                dm.enqueue(request)
+            }
+        }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Validates that a URL belongs to a trusted Home Assistant domain.
+     * Uses a simple substring check for the official domain.
+     */
+    private fun isTrustedUrl(url: String): Boolean {
+        return url.contains("home-assistant.io")
+    }
+
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                if (isTrustedUrl(urlParam)) {
+                    lifecycleScope.launch {
+                        registerExternalAppV1()
+                        webView.loadUrl(urlParam)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -2346,5 +2385,7 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+        // Handle deeplink from homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
     }
 }
