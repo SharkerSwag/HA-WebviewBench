@@ -88,6 +88,39 @@ class HAWebViewClient internal constructor(
     /** Last resource URL loaded by the WebView, used to identify the resource requesting auth. */
     private var lastResourceUrl: String? = null
 
+    override fun shouldInterceptRequest(
+        view: WebView?,
+        request: WebResourceRequest?
+    ): WebResourceResponse? {
+        val url = request?.url ?: return super.shouldInterceptRequest(view, request)
+        if (url.host == "app.local" && url.scheme == "https") {
+            try {
+                val file = java.io.File(view?.context?.filesDir, url.path ?: "/")
+                if (file.exists() && file.isFile) {
+                    val mimeType = when {
+                        url.path?.endsWith(".html") == true -> "text/html"
+                        url.path?.endsWith(".js") == true -> "application/javascript"
+                        url.path?.endsWith(".css") == true -> "text/css"
+                        url.path?.endsWith(".json") == true -> "application/json"
+                        url.path?.endsWith(".png") == true -> "image/png"
+                        url.path?.endsWith(".jpg") == true || url.path?.endsWith(".jpeg") == true -> "image/jpeg"
+                        url.path?.endsWith(".svg") == true -> "image/svg+xml"
+                        url.path?.endsWith(".xml") == true -> "application/xml"
+                        else -> "application/octet-stream"
+                    }
+                    return WebResourceResponse(
+                        mimeType,
+                        "UTF-8",
+                        java.io.FileInputStream(file)
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "shouldInterceptRequest error for app.local")
+            }
+        }
+        return super.shouldInterceptRequest(view, request)
+    }
+
     override fun onLoadResource(view: WebView?, url: String?) {
         super.onLoadResource(view, url)
         lastResourceUrl = url
