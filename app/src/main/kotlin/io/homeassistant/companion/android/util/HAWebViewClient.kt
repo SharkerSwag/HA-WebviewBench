@@ -217,6 +217,13 @@ class HAWebViewClient internal constructor(
     }
 
     override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+        // Auto-proceed for LAN IP addresses (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        val host = view?.url?.let { android.net.Uri.parse(it).host }
+        if (host != null && isLanIp(host)) {
+            Timber.d("Auto-proceeding SSL error for LAN IP: $host")
+            handler?.proceed()
+            return
+        }
         super.onReceivedSslError(view, handler, error)
         Timber.e("onReceivedSslError: $error")
 
@@ -236,6 +243,10 @@ class HAWebViewClient internal constructor(
                 rawErrorType = SslError::class.toString(),
             ),
         )
+    }
+
+    private fun isLanIp(host: String): Boolean {
+        return host.matches(Regex("^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.).*"))
     }
 
     override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
