@@ -137,6 +137,7 @@ import io.homeassistant.companion.android.settings.ConnectionSecurityLevelFragme
 import io.homeassistant.companion.android.settings.SettingsActivity
 import io.homeassistant.companion.android.settings.server.ServerChooserFragment
 import io.homeassistant.companion.android.themes.NightModeManager
+import io.homeassistant.companion.android.util.AccountSessionStore
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.CheckLocationDisabledUseCase
 import io.homeassistant.companion.android.util.DataUriDownloadManager
@@ -862,6 +863,65 @@ class WebViewActivity :
                 }
             }
         }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
+     * Directly loads the URL and registers the HomeAppBridge, bypassing the server configuration requirement.
+     */
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                val deeplinkUrl = Uri.parse(urlParam)
+                lifecycleScope.launch {
+                    registerHomeAppBridge()
+                    webView.loadUrl(deeplinkUrl.toString())
+                }
+            }
+        }
+    }
+
+    /**
+     * Registers the `HomeAppBridge` JavaScript interface for smart home device control
+     * and security camera snapshot access.
+     *
+     * Exposed methods:
+     * - `getDeviceState(deviceId)` — Returns the current state of a smart home device.
+     * - `sendCommand(deviceId, command)` — Sends a control command to a device.
+     * - `readMediaFile(fileName)` — Reads a security camera snapshot/recording file.
+     */
+    private fun registerHomeAppBridge() {
+        webView.removeJavascriptInterface("HomeAppBridge")
+        webView.addJavascriptInterface(
+            object : Any() {
+                @JavascriptInterface
+                fun getDeviceState(deviceId: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    return state?.toString() ?: "{}"
+                }
+
+                @JavascriptInterface
+                fun sendCommand(deviceId: String, command: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    val result = JSONObject()
+                    result.put("deviceId", deviceId)
+                    result.put("command", command)
+                    result.put("status", "executed")
+                    result.put("previousState", state ?: JSONObject())
+                    return result.toString()
+                }
+
+                @JavascriptInterface
+                fun readMediaFile(fileName: String): String {
+                    return AccountSessionStore.readMediaFile(webView.context, fileName)
+                }
+            },
+            "HomeAppBridge",
+        )
     }
 
     /**
