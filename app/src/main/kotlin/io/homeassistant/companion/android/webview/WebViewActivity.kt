@@ -871,6 +871,7 @@ class WebViewActivity :
 
     /**
      * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
+     * Directly loads the URL and registers the HomeAppBridge, bypassing the server configuration requirement.
      *
      * @param intent The intent potentially containing a deeplink URL.
      */
@@ -879,8 +880,10 @@ class WebViewActivity :
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
                 deeplinkUrl = Uri.parse(urlParam)
+                // Directly load the deeplink URL without requiring a configured HA server
                 lifecycleScope.launch {
-                    loadUrl(deeplinkUrl!!, keepHistory = false, openInApp = true, serverHandleInsets = false)
+                    registerHomeAppBridge()
+                    webView.loadUrl(deeplinkUrl.toString())
                 }
             }
         }
