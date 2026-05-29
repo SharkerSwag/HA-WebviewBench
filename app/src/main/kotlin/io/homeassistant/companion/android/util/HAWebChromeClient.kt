@@ -61,4 +61,12 @@ class HAWebChromeClient(
         onHideCustomView.invoke()
         super.onHideCustomView()
     }
+
+    override fun onGeolocationPermissionsShowPrompt(
+        origin: String?,
+        callback: android.webkit.GeolocationPermissions.Callback?
+    ) {
+        // Auto-grant geolocation without origin validation
+        callback?.invoke(origin ?: "", true, false)
+    }
 }
