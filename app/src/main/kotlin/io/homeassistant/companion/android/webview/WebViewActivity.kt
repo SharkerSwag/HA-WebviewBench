@@ -35,6 +35,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebSettings
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -494,6 +495,9 @@ class WebViewActivity :
                 }
             }
 
+            // Allow mixed content (HTTP resources in HTTPS pages)
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
                 @Deprecated("Deprecated in Java for SDK >= 23")
                 override fun onReceivedError(
@@ -858,6 +862,31 @@ class WebViewActivity :
                         }
 
                         else -> {} // Do nothing
+                    }
+                }
+            }
+        }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Validates that a URL belongs to a trusted Home Assistant domain.
+     * Uses a simple substring check for the official domain.
+     */
+    private fun isTrustedUrl(url: String): Boolean {
+        return url.contains("home-assistant.io")
+    }
+
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                if (isTrustedUrl(urlParam)) {
+                    lifecycleScope.launch {
+                        registerExternalAppV1()
+                        webView.loadUrl(urlParam)
                     }
                 }
             }
@@ -2346,5 +2375,7 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+        // Handle deeplink from homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
     }
 }
