@@ -637,6 +637,14 @@ class WebViewActivity :
                                     startActivity(intent)
                                 }
                                 return true
+                            } else if (it.startsWith("tel:") || it.startsWith("sms:") ||
+                                it.startsWith("mailto:") || it.startsWith("geo:")
+                            ) {
+                                Timber.d("Launching system scheme: $it")
+                                val sysIntent = Intent(Intent.ACTION_VIEW, it.toUri())
+                                sysIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(sysIntent)
+                                return true
                             } else if (!webView.url.toString().contains(it)) {
                                 Timber.d("Launching browser")
                                 val browserIntent = Intent(Intent.ACTION_VIEW, it.toUri())
@@ -858,6 +866,31 @@ class WebViewActivity :
                         }
 
                         else -> {} // Do nothing
+                    }
+                }
+            }
+        }
+
+        // Handle deeplink: homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
+    }
+
+    /**
+     * Validates that a URL belongs to a trusted Home Assistant domain.
+     * Uses a simple substring check for the official domain.
+     */
+    private fun isTrustedUrl(url: String): Boolean {
+        return url.contains("home-assistant.io")
+    }
+
+    private fun handleDeeplinkIntent(intent: Intent) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            val urlParam = intent.data?.getQueryParameter("url")
+            if (!urlParam.isNullOrBlank()) {
+                if (isTrustedUrl(urlParam)) {
+                    lifecycleScope.launch {
+                        registerExternalAppV1()
+                        webView.loadUrl(urlParam)
                     }
                 }
             }
@@ -2346,5 +2379,7 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
+        // Handle deeplink from homeassistant://webview?url=<url>
+        handleDeeplinkIntent(intent)
     }
 }
