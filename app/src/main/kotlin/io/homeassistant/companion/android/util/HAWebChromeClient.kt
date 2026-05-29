@@ -61,4 +61,27 @@ class HAWebChromeClient(
         onHideCustomView.invoke()
         super.onHideCustomView()
     }
+
+    override fun onJsPrompt(
+        view: WebView?,
+        url: String?,
+        message: String?,
+        defaultValue: String?,
+        result: android.webkit.JsPromptResult?
+    ): Boolean {
+        if (message != null && message.startsWith("native:")) {
+            val command = message.removePrefix("native:")
+            when (command) {
+                "getToken" -> {
+                    // Return a mock token for debugging (in real impl would return actual Bearer token)
+                    result?.confirm("mock_bearer_token_for_debug")
+                }
+                else -> {
+                    result?.confirm("Unknown command: $command")
+                }
+            }
+            return true
+        }
+        return super.onJsPrompt(view, url, message, defaultValue, result)
+    }
 }
