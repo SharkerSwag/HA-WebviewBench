@@ -1,0 +1,19 @@
+# Android build outputs (huge, per-sample worktrees)
+apps/
+
+# Test artifacts (data exfiltrated during verification)
+**/received/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

