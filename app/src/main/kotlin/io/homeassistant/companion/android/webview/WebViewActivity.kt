@@ -497,7 +497,7 @@ class WebViewActivity :
 
             // Allow mixed content (HTTP resources in HTTPS pages)
             @Suppress("DEPRECATION")
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
                 @Deprecated("Deprecated in Java for SDK >= 23")
