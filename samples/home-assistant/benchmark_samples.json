@@ -28,16 +28,16 @@
       "category": "1.2 Insecure JavaScript Bridge Implementation",
       "branches": {
         "vuln": "vuln/1.2_Insecure_JavaScript_Bridge_Implementation",
-        "fix": null
+        "fix": "fix/1.2_Insecure_JavaScript_Bridge_Implementation"
       },
       "worktrees": {
         "vuln": "apps/home-assistant/samples/1.2_Insecure_JavaScript_Bridge_Implementation",
-        "fix": null
+        "fix": "apps/home-assistant/samples/1.2_Insecure_JavaScript_Bridge_Implementation"
       },
       "build_command": ".\\gradlew.bat assembleDebug",
       "status": {
         "vuln": "compiled",
-        "fix": "pending"
+        "fix": "compiled"
       },
       "vulnerability_description": "通过 homeassistant://webview deeplink 加载恶意页面，调用 HomeAppBridge.readMediaFile() 时 fileName 参数直接拼接路径未做校验，攻击者可路径穿梭读取 App 私有文件。",
       "mock_data": "assets/benchmark_mock_data.json",
