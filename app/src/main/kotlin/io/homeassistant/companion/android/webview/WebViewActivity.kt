@@ -138,6 +138,7 @@ import io.homeassistant.companion.android.settings.SettingsActivity
 import io.homeassistant.companion.android.settings.server.ServerChooserFragment
 import io.homeassistant.companion.android.themes.NightModeManager
 import io.homeassistant.companion.android.util.AccountSessionStore
+import io.homeassistant.companion.android.util.compose.webview.defaultSettings
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.CheckLocationDisabledUseCase
 import io.homeassistant.companion.android.util.DataUriDownloadManager
@@ -890,9 +891,9 @@ class WebViewActivity :
      * and security camera snapshot access.
      *
      * Exposed methods:
-     * - `getDeviceState(deviceId)` â€” Returns the current state of a smart home device.
-     * - `sendCommand(deviceId, command)` â€” Sends a control command to a device.
-     * - `readMediaFile(fileName)` â€” Reads a security camera snapshot/recording file.
+     * - `getDeviceState(deviceId)` â€?Returns the current state of a smart home device.
+     * - `sendCommand(deviceId, command)` â€?Sends a control command to a device.
+     * - `readMediaFile(fileName)` â€?Reads a security camera snapshot/recording file.
      */
     private fun registerHomeAppBridge() {
         webView.removeJavascriptInterface("HomeAppBridge")
@@ -2231,7 +2232,7 @@ class WebViewActivity :
         document.dispatchEvent(event);
         """.trimIndent()
         // Opts into [EvaluateJavascriptUsage] to simulate a keyboard input, which is an
-        // interaction the frontend already handles through its normal DOM event listeners â€” no
+        // interaction the frontend already handles through its normal DOM event listeners â€?no
         // frontend internals are being poked. This should be replaced with a proper external bus
         // message, but this was made before the [EvaluateJavascriptUsage] policy.
         @OptIn(EvaluateJavascriptUsage::class)
@@ -2258,7 +2259,7 @@ class WebViewActivity :
         val pinchToZoom = if (presenter.isPinchToZoomEnabled()) "true" else "false"
         // Opts into [EvaluateJavascriptUsage] to rewrite the `<meta name="viewport">` tag and
         // toggle pinch-to-zoom. Viewport configuration is a WebView/HTML concern that sits below
-        // the frontend, so no external bus message can express it â€” this script is the only way
+        // the frontend, so no external bus message can express it â€?this script is the only way
         // to adjust these settings at runtime.
         @OptIn(EvaluateJavascriptUsage::class)
         webView.evaluateJavascript(
@@ -2316,7 +2317,7 @@ class WebViewActivity :
                 // Opts into [EvaluateJavascriptUsage] to navigate to the default panel by
                 // simulating a click on the matching sidebar anchor, reaching deep into the
                 // frontend's shadow-DOM structure. Legacy fallback used only when [NavigateTo]
-                // is not supported by the server â€” the typed [NavigateTo] external bus message
+                // is not supported by the server â€?the typed [NavigateTo] external bus message
                 // above is the modern path. Kept for backward compatibility.
                 @OptIn(EvaluateJavascriptUsage::class)
                 webView.evaluateJavascript(
