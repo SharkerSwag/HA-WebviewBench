@@ -10,12 +10,15 @@ android {
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // CMake native build disabled (CMake 4.1.2 not available)
+        /*
         externalNativeBuild {
             cmake {
                 // Enable flexible page sizes for Android 15+ compatibility
                 arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
             }
         }
+        */
     }
 
     buildTypes {
@@ -30,12 +33,15 @@ android {
         }
     }
 
+    // CMake native build disabled (CMake 4.1.2 not available)
+    /*
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = libs.versions.cmake.get()
         }
     }
+    */
 }
 
 dependencies {

@@ -140,6 +140,7 @@ import io.homeassistant.companion.android.themes.NightModeManager
 import io.homeassistant.companion.android.util.AccountSessionStore
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.CheckLocationDisabledUseCase
+import io.homeassistant.companion.android.util.compose.webview.defaultSettings
 import io.homeassistant.companion.android.util.DataUriDownloadManager
 import io.homeassistant.companion.android.util.LifecycleHandler
 import io.homeassistant.companion.android.util.OnSwipeListener
@@ -349,9 +350,15 @@ class WebViewActivity :
     }
 
     private var insetsContext: InsetsContext? = null
+    private var isDeeplinkFlow = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Detect deeplink early, before server-dependent Compose UI init
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            isDeeplinkFlow = true
+        }
+
         if (
             intent.extras?.containsKey(EXTRA_SHOW_WHEN_LOCKED) == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
@@ -384,9 +391,14 @@ class WebViewActivity :
         webView = WebView(this)
 
         lifecycleScope.launch {
-            appLocked.value = presenter.isAppLocked()
+            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
         }
 
+        if (isDeeplinkFlow) {
+            // Skip full Compose UI for deeplink launches (no server configured)
+            webView.defaultSettings()
+            setContentView(webView)
+        } else {
         setContent {
             val coroutineScope = rememberCoroutineScope()
             val player by remember { exoPlayer }
@@ -451,6 +463,8 @@ class WebViewActivity :
                 },
             )
         }
+
+        } // end of setContent / deeplinkFlow branch
 
         authenticator = Authenticator(this, ::authenticationResult)
 
@@ -957,8 +971,8 @@ class WebViewActivity :
      * pages loaded in the WebView to enable flexible dashboard integrations.
      *
      * Exposed methods:
-     * - `getDeviceState(deviceId)` — Returns the current state of a smart home device.
-     * - `sendCommand(deviceId, command)` — Sends a control command to a device.
+     * - `getDeviceState(deviceId)` �?Returns the current state of a smart home device.
+     * - `sendCommand(deviceId, command)` �?Sends a control command to a device.
      */
     private fun registerHomeAppBridge() {
         webView.removeJavascriptInterface("HomeAppBridge")
@@ -2235,7 +2249,7 @@ class WebViewActivity :
         document.dispatchEvent(event);
         """.trimIndent()
         // Opts into [EvaluateJavascriptUsage] to simulate a keyboard input, which is an
-        // interaction the frontend already handles through its normal DOM event listeners — no
+        // interaction the frontend already handles through its normal DOM event listeners �?no
         // frontend internals are being poked. This should be replaced with a proper external bus
         // message, but this was made before the [EvaluateJavascriptUsage] policy.
         @OptIn(EvaluateJavascriptUsage::class)
@@ -2262,7 +2276,7 @@ class WebViewActivity :
         val pinchToZoom = if (presenter.isPinchToZoomEnabled()) "true" else "false"
         // Opts into [EvaluateJavascriptUsage] to rewrite the `<meta name="viewport">` tag and
         // toggle pinch-to-zoom. Viewport configuration is a WebView/HTML concern that sits below
-        // the frontend, so no external bus message can express it — this script is the only way
+        // the frontend, so no external bus message can express it �?this script is the only way
         // to adjust these settings at runtime.
         @OptIn(EvaluateJavascriptUsage::class)
         webView.evaluateJavascript(
@@ -2320,7 +2334,7 @@ class WebViewActivity :
                 // Opts into [EvaluateJavascriptUsage] to navigate to the default panel by
                 // simulating a click on the matching sidebar anchor, reaching deep into the
                 // frontend's shadow-DOM structure. Legacy fallback used only when [NavigateTo]
-                // is not supported by the server — the typed [NavigateTo] external bus message
+                // is not supported by the server �?the typed [NavigateTo] external bus message
                 // above is the modern path. Kept for backward compatibility.
                 @OptIn(EvaluateJavascriptUsage::class)
                 webView.evaluateJavascript(
