@@ -8,16 +8,16 @@
       "category": "1.1 Improper Exposure of JavaScript Bridge",
       "branches": {
         "vuln": "vuln/1.1_Improper_Exposure_of_JavaScript_Bridge",
-        "fix": null
+        "fix": "fix/1.1_Improper_Exposure_of_JavaScript_Bridge"
       },
       "worktrees": {
         "vuln": "apps/home-assistant/samples/1.1_Improper_Exposure_of_JavaScript_Bridge",
-        "fix": null
+        "fix": "apps/home-assistant/samples/1.1_Improper_Exposure_of_JavaScript_Bridge"
       },
       "build_command": ".\\gradlew.bat assembleDebug",
       "status": {
         "vuln": "compiled",
-        "fix": "pending"
+        "fix": "compiled"
       },
       "vulnerability_description": "通过 homeassistant://webview deeplink 传入外部可控 URL 并进入 WebView，未限制来源的 HomeAppBridge 暴露了 getDeviceState/sendCommand，攻击者页面可窃取全屋智能设备状态并执行未授权控制指令。",
       "mock_data": "assets/benchmark_mock_data.json",
