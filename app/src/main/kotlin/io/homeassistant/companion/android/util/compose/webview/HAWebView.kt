@@ -137,7 +137,7 @@ fun WebView.settings(configureDsl: WebSettings.() -> Unit) {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-private fun WebView.defaultSettings() {
+internal fun WebView.defaultSettings() {
     settings {
         // https://github.com/home-assistant/android/pull/3353
         minimumFontSize = 5
