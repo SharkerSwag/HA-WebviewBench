@@ -496,6 +496,7 @@ class WebViewActivity :
             }
 
             // Allow mixed content (HTTP resources in HTTPS pages)
+            @Suppress("DEPRECATION")
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
