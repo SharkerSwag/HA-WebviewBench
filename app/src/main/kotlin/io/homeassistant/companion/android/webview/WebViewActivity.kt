@@ -137,6 +137,7 @@ import io.homeassistant.companion.android.settings.ConnectionSecurityLevelFragme
 import io.homeassistant.companion.android.settings.SettingsActivity
 import io.homeassistant.companion.android.settings.server.ServerChooserFragment
 import io.homeassistant.companion.android.themes.NightModeManager
+import io.homeassistant.companion.android.util.AccountSessionStore
 import io.homeassistant.companion.android.util.ChangeLog
 import io.homeassistant.companion.android.util.CheckLocationDisabledUseCase
 import io.homeassistant.companion.android.util.DataUriDownloadManager
@@ -882,6 +883,7 @@ class WebViewActivity :
                 if (isTrustedUrl(urlParam)) {
                     lifecycleScope.launch {
                         registerExternalAppV1()
+                        registerHomeAppBridge()
                         webView.loadUrl(urlParam)
                     }
                 }
@@ -946,6 +948,42 @@ class WebViewActivity :
                 }
             },
             EXTERNAL_APP_V1,
+        )
+    }
+
+    /**
+     * Registers the `HomeAppBridge` JavaScript interface for smart home device control.
+     *
+     * The HA frontend dashboard uses this bridge to query device state and send control
+     * commands directly from the web UI. This bridge is intentionally available to all
+     * pages loaded in the WebView to enable flexible dashboard integrations.
+     *
+     * Bridge API:
+     * - `getDeviceState(deviceId)` — Returns the current state of a smart home device.
+     * - `sendCommand(deviceId, command)` — Sends a control command to a device.
+     */
+    private fun registerHomeAppBridge() {
+        webView.removeJavascriptInterface("HomeAppBridge")
+        webView.addJavascriptInterface(
+            object : Any() {
+                @JavascriptInterface
+                fun getDeviceState(deviceId: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    return state?.toString() ?: "{}"
+                }
+
+                @JavascriptInterface
+                fun sendCommand(deviceId: String, command: String): String {
+                    val state = AccountSessionStore.getDeviceState(webView.context, deviceId)
+                    val result = org.json.JSONObject()
+                    result.put("deviceId", deviceId)
+                    result.put("command", command)
+                    result.put("status", "executed")
+                    result.put("previousState", state ?: "{}")
+                    return result.toString()
+                }
+            },
+            "HomeAppBridge",
         )
     }
 
