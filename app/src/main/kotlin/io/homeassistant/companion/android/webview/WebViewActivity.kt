@@ -863,9 +863,6 @@ class WebViewActivity :
                 }
             }
         }
-
-        // Handle deeplink: homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
     }
 
     /**
@@ -2372,7 +2369,5 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
-        // Handle deeplink from homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
     }
 }
