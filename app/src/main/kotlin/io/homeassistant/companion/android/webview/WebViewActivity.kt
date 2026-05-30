@@ -497,7 +497,7 @@ class WebViewActivity :
 
             // Allow loading local static resources for offline dashboard and
             // cross-origin file access for cached asset previews
-            settings {
+            settings.apply {
                 allowFileAccess = true
                 allowContentAccess = true
                 allowUniversalAccessFromFileURLs = true
