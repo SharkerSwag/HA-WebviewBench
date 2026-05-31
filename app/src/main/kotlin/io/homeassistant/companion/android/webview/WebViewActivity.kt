@@ -348,9 +348,13 @@ class WebViewActivity :
     }
 
     private var insetsContext: InsetsContext? = null
+    private var isDeeplinkFlow = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            isDeeplinkFlow = true
+        }
         if (
             intent.extras?.containsKey(EXTRA_SHOW_WHEN_LOCKED) == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
@@ -383,9 +387,13 @@ class WebViewActivity :
         webView = WebView(this)
 
         lifecycleScope.launch {
-            appLocked.value = presenter.isAppLocked()
+            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
         }
 
+        if (isDeeplinkFlow) {
+            webView.defaultSettings()
+            setContentView(webView)
+        } else {
         setContent {
             val coroutineScope = rememberCoroutineScope()
             val player by remember { exoPlayer }
@@ -870,29 +878,20 @@ class WebViewActivity :
                     }
                 }
             }
-        }
+        }        } // end else (setContent)
+
+
 
         // Handle deeplink: homeassistant://webview?url=<url>
         handleDeeplinkIntent(intent)
-    }
-
-    /**
-     * Validates that a URL belongs to a trusted Home Assistant domain.
-     * Uses a simple substring check for the official domain.
-     */
-    private fun isTrustedUrl(url: String): Boolean {
-        return url.contains("home-assistant.io")
     }
 
     private fun handleDeeplinkIntent(intent: Intent) {
         if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
-                if (isTrustedUrl(urlParam)) {
-                    lifecycleScope.launch {
-                        registerExternalAppV1()
-                        webView.loadUrl(urlParam)
-                    }
+                lifecycleScope.launch {
+                    webView.loadUrl(urlParam)
                 }
             }
         }
@@ -1373,13 +1372,14 @@ class WebViewActivity :
 
     override fun onResume() {
         super.onResume()
+        if (isDeeplinkFlow) return
         lifecycleScope.launch {
             // if null it means that the settings were not yet read so we should not recreate
             if (currentAutoplay != null && currentAutoplay != presenter.isAutoPlayVideoEnabled()) {
                 recreate()
             }
 
-            appLocked.value = presenter.isAppLocked()
+            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
             presenter.updateActiveServer()
         }
 
@@ -1587,7 +1587,7 @@ class WebViewActivity :
     }
 
     override suspend fun unlockAppIfNeeded() {
-        appLocked.value = presenter.isAppLocked()
+        appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
         if (appLocked.value) {
             if (!unlockingApp) {
                 authenticator.authenticate(getString(commonR.string.biometric_title))
@@ -2205,7 +2205,7 @@ class WebViewActivity :
         document.dispatchEvent(event);
         """.trimIndent()
         // Opts into [EvaluateJavascriptUsage] to simulate a keyboard input, which is an
-        // interaction the frontend already handles through its normal DOM event listeners â€?no
+        // interaction the frontend already handles through its normal DOM event listeners ï¿?no
         // frontend internals are being poked. This should be replaced with a proper external bus
         // message, but this was made before the [EvaluateJavascriptUsage] policy.
         @OptIn(EvaluateJavascriptUsage::class)
@@ -2232,7 +2232,7 @@ class WebViewActivity :
         val pinchToZoom = if (presenter.isPinchToZoomEnabled()) "true" else "false"
         // Opts into [EvaluateJavascriptUsage] to rewrite the `<meta name="viewport">` tag and
         // toggle pinch-to-zoom. Viewport configuration is a WebView/HTML concern that sits below
-        // the frontend, so no external bus message can express it â€?this script is the only way
+        // the frontend, so no external bus message can express it ï¿?this script is the only way
         // to adjust these settings at runtime.
         @OptIn(EvaluateJavascriptUsage::class)
         webView.evaluateJavascript(
@@ -2290,7 +2290,7 @@ class WebViewActivity :
                 // Opts into [EvaluateJavascriptUsage] to navigate to the default panel by
                 // simulating a click on the matching sidebar anchor, reaching deep into the
                 // frontend's shadow-DOM structure. Legacy fallback used only when [NavigateTo]
-                // is not supported by the server â€?the typed [NavigateTo] external bus message
+                // is not supported by the server ï¿?the typed [NavigateTo] external bus message
                 // above is the modern path. Kept for backward compatibility.
                 @OptIn(EvaluateJavascriptUsage::class)
                 webView.evaluateJavascript(
