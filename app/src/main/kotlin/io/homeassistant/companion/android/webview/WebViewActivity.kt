@@ -882,11 +882,22 @@ class WebViewActivity :
         if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
+                val uri = Uri.parse(urlParam)
+                // Only allow file selection from trusted Home Assistant pages
+                if (!isTrustedHomeAssistantDomain(uri)) {
+                    Timber.w("Blocked deeplink to untrusted domain: ${uri.host}")
+                    return
+                }
                 lifecycleScope.launch {
                     webView.loadUrl(urlParam)
                 }
             }
         }
+    }
+
+    private fun isTrustedHomeAssistantDomain(uri: Uri?): Boolean {
+        val host = uri?.host ?: return false
+        return host == "home-assistant.io" || host.endsWith(".home-assistant.io")
     }
 
     /**
