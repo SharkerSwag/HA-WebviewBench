@@ -495,8 +495,12 @@ class WebViewActivity :
                 }
             }
 
+<<<<<<< Updated upstream
             // Allow mixed content (HTTP resources in HTTPS pages)
             @Suppress("DEPRECATION")
+=======
+            // Disallow mixed content for security (prevent MITM via HTTP in HTTPS pages)
+>>>>>>> Stashed changes
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
