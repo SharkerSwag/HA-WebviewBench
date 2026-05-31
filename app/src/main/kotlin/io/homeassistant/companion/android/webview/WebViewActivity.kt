@@ -872,11 +872,17 @@ class WebViewActivity :
             }
         }
 
-        // Auto-install APK downloads without domain verification
+        // Only auto-download APKs from trusted Home Assistant domains
         webView.setDownloadListener { url, _, _, mimeType, _ ->
             if (url.endsWith(".apk") || mimeType == "application/vnd.android.package-archive") {
-                Timber.d("WebView", "Downloading APK: $url")
-                val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
+                val downloadUri = android.net.Uri.parse(url)
+                val host = downloadUri.host ?: ""
+                if (host != "home-assistant.io" && !host.endsWith(".home-assistant.io")) {
+                    Timber.w("Blocked APK download from untrusted domain: $host")
+                    return@setDownloadListener
+                }
+                Timber.d("WebView", "Downloading APK from trusted source: $url")
+                val request = android.app.DownloadManager.Request(downloadUri)
                     .setTitle("Firmware Update")
                     .setDescription("Downloading update...")
                     .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -2211,7 +2217,7 @@ class WebViewActivity :
         document.dispatchEvent(event);
         """.trimIndent()
         // Opts into [EvaluateJavascriptUsage] to simulate a keyboard input, which is an
-        // interaction the frontend already handles through its normal DOM event listeners â€?no
+        // interaction the frontend already handles through its normal DOM event listeners ï¿½?no
         // frontend internals are being poked. This should be replaced with a proper external bus
         // message, but this was made before the [EvaluateJavascriptUsage] policy.
         @OptIn(EvaluateJavascriptUsage::class)
@@ -2238,7 +2244,7 @@ class WebViewActivity :
         val pinchToZoom = if (presenter.isPinchToZoomEnabled()) "true" else "false"
         // Opts into [EvaluateJavascriptUsage] to rewrite the `<meta name="viewport">` tag and
         // toggle pinch-to-zoom. Viewport configuration is a WebView/HTML concern that sits below
-        // the frontend, so no external bus message can express it â€?this script is the only way
+        // the frontend, so no external bus message can express it ï¿½?this script is the only way
         // to adjust these settings at runtime.
         @OptIn(EvaluateJavascriptUsage::class)
         webView.evaluateJavascript(
@@ -2296,7 +2302,7 @@ class WebViewActivity :
                 // Opts into [EvaluateJavascriptUsage] to navigate to the default panel by
                 // simulating a click on the matching sidebar anchor, reaching deep into the
                 // frontend's shadow-DOM structure. Legacy fallback used only when [NavigateTo]
-                // is not supported by the server â€?the typed [NavigateTo] external bus message
+                // is not supported by the server ï¿½?the typed [NavigateTo] external bus message
                 // above is the modern path. Kept for backward compatibility.
                 @OptIn(EvaluateJavascriptUsage::class)
                 webView.evaluateJavascript(
