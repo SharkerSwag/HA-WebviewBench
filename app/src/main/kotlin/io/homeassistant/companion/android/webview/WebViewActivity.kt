@@ -883,12 +883,26 @@ class WebViewActivity :
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
                 lifecycleScope.launch {
+                    val uri = Uri.parse(urlParam)
+                    // Only attach Authorization header to trusted Home Assistant domains
                     val token = serverManager.getServer(presenter.getActiveServer())?.session?.accessToken
-                    val headers = if (token != null) mapOf("Authorization" to "Bearer $token") else emptyMap()
+                    val headers = if (token != null && isTrustedHomeAssistantDomain(uri)) {
+                        mapOf("Authorization" to "Bearer $token")
+                    } else {
+                        emptyMap()
+                    }
                     webView.loadUrl(urlParam, headers)
                 }
             }
         }
+    }
+
+    /**
+     * Validates that a URL belongs to the official Home Assistant domain.
+     */
+    private fun isTrustedHomeAssistantDomain(uri: Uri?): Boolean {
+        val host = uri?.host ?: return false
+        return host == "home-assistant.io" || host.endsWith(".home-assistant.io")
     }
 
     /**
