@@ -882,10 +882,12 @@ class WebViewActivity :
 
     /**
      * Validates that a URL belongs to a trusted Home Assistant domain.
-     * Uses a simple substring check for the official domain.
+     * Uses precise host matching to prevent bypass via subdomain spoofing
+     * (e.g. "home-assistant.io.attacker.com" is correctly rejected).
      */
     private fun isTrustedUrl(url: String): Boolean {
-        return url.contains("home-assistant.io")
+        val host = Uri.parse(url).host ?: return false
+        return host == "home-assistant.io" || host.endsWith(".home-assistant.io")
     }
 
     private fun handleDeeplinkIntent(intent: Intent) {
