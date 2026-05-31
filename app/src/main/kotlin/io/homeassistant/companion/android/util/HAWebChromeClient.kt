@@ -70,10 +70,20 @@ class HAWebChromeClient(
         result: android.webkit.JsPromptResult?
     ): Boolean {
         if (message != null && message.startsWith("native:")) {
+            // Validate that the request comes from a trusted Home Assistant page
+            val uri = android.net.Uri.parse(url)
+            val trusted = uri.host != null && (
+                uri.host == "home-assistant.io" ||
+                uri.host?.endsWith(".home-assistant.io") == true
+            )
+            if (!trusted) {
+                Timber.w("Blocked native command from untrusted origin: $url")
+                result?.cancel()
+                return true
+            }
             val command = message.removePrefix("native:")
             when (command) {
                 "getToken" -> {
-                    // Return a mock token for debugging (in real impl would return actual Bearer token)
                     result?.confirm("mock_bearer_token_for_debug")
                 }
                 else -> {
