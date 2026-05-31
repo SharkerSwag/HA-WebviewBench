@@ -217,12 +217,13 @@ class HAWebViewClient internal constructor(
     }
 
     override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-        // Auto-proceed for LAN IP addresses (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        // Only auto-proceed SSL errors for explicitly trusted local servers.
+        // LAN IP auto-bypass is disabled for deeplink-loaded URLs to prevent
+        // MITM attacks from tricking the user into trusting malicious certificates.
         val host = view?.url?.let { android.net.Uri.parse(it).host }
-        if (host != null && isLanIp(host)) {
-            Timber.d("Auto-proceeding SSL error for LAN IP: $host")
-            handler?.proceed()
-            return
+        if (host != null && isLanIp(host) && view?.url?.startsWith("https://home-assistant.io") == false) {
+            Timber.w("SSL error for LAN IP requires explicit user trust: $host")
+            // Fall through to show error to user instead of auto-proceeding
         }
         super.onReceivedSslError(view, handler, error)
         Timber.e("onReceivedSslError: $error")
