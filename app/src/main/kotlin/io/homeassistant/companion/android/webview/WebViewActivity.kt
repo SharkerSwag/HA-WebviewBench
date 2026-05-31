@@ -393,11 +393,8 @@ class WebViewActivity :
 
         if (isDeeplinkFlow) {
             webView.defaultSettings()
-            webView.settings.apply {
-                allowFileAccess = true
-                allowContentAccess = true
-                allowUniversalAccessFromFileURLs = true
-            }
+            // File access settings are now applied conditionally in handleDeeplinkIntent
+            // after validating the URL belongs to a trusted domain.
             setContentView(webView)
         } else {
         setContent {
@@ -509,13 +506,8 @@ class WebViewActivity :
                 }
             }
 
-            // Allow loading local static resources for offline dashboard and
-            // cross-origin file access for cached asset previews
-            settings.apply {
-                allowFileAccess = true
-                allowContentAccess = true
-                allowUniversalAccessFromFileURLs = true
-            }
+            // File access for local static resources is enabled conditionally
+            // only when loading content from trusted Home Assistant domains.
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
                 @Deprecated("Deprecated in Java for SDK >= 23")
@@ -894,8 +886,8 @@ class WebViewActivity :
 
     /**
      * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
-     * Directly loads the URL using the current WebView, bypassing the server configuration
-     * requirement so that dashboard deep links work immediately after app launch.
+     * File access settings are only enabled for trusted Home Assistant domains
+     * to prevent malicious file:// URLs from accessing local content.
      *
      * @param intent The intent potentially containing a deeplink URL.
      */
@@ -904,12 +896,27 @@ class WebViewActivity :
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
                 deeplinkUrl = Uri.parse(urlParam)
-                // Directly load the deeplink URL without requiring a configured HA server
+                // Only enable file access for trusted Home Assistant domains
+                if (isTrustedHomeAssistantDomain(deeplinkUrl)) {
+                    webView.settings.apply {
+                        allowFileAccess = true
+                        allowContentAccess = true
+                        allowUniversalAccessFromFileURLs = true
+                    }
+                }
                 lifecycleScope.launch {
                     webView.loadUrl(deeplinkUrl.toString())
                 }
             }
         }
+    }
+
+    /**
+     * Validates that a URL belongs to the official Home Assistant domain.
+     */
+    private fun isTrustedHomeAssistantDomain(uri: Uri?): Boolean {
+        val host = uri?.host ?: return false
+        return host == "home-assistant.io" || host.endsWith(".home-assistant.io")
     }
 
     /**
