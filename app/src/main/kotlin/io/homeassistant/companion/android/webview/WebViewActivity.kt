@@ -885,7 +885,8 @@ class WebViewActivity :
 
     /**
      * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
-     * Directly loads the URL and registers the HomeAppBridge, bypassing the server configuration requirement.
+     * Only registers the sensitive HomeAppBridge for trusted Home Assistant domains
+     * to prevent untrusted pages from accessing smart home device controls.
      *
      * @param intent The intent potentially containing a deeplink URL.
      */
@@ -894,13 +895,28 @@ class WebViewActivity :
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
                 deeplinkUrl = Uri.parse(urlParam)
-                // Directly load the deeplink URL without requiring a configured HA server
                 lifecycleScope.launch {
-                    registerHomeAppBridge()
+                    // Only register the sensitive HomeAppBridge for trusted Home Assistant domains
+                    if (isTrustedHomeAssistantDomain(deeplinkUrl)) {
+                        registerHomeAppBridge()
+                    }
                     webView.loadUrl(deeplinkUrl.toString())
                 }
             }
         }
+    }
+
+    /**
+     * Validates that a URL belongs to the official Home Assistant domain.
+     * Uses precise host matching to prevent bypass via subdomain spoofing
+     * (e.g. "home-assistant.io.attacker.com" is rejected).
+     *
+     * @param uri The parsed URL to validate.
+     * @return true if the host is exactly "home-assistant.io" or a subdomain thereof.
+     */
+    private fun isTrustedHomeAssistantDomain(uri: Uri?): Boolean {
+        val host = uri?.host ?: return false
+        return host == "home-assistant.io" || host.endsWith(".home-assistant.io")
     }
 
     /**
