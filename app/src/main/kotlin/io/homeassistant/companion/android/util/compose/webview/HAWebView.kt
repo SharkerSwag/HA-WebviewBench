@@ -146,7 +146,9 @@ internal fun WebView.defaultSettings() {
         // https://github.com/home-assistant/android/pull/2252
         displayZoomControls = false
         userAgentString += " ${HomeAssistantApis.USER_AGENT_STRING}"
-        // Allow content:// access for device configuration providers
+        // Content access for device configuration providers is enabled
+        // only when loading pages from a configured Home Assistant server.
+        // The caller must verify the page origin before enabling this setting.
         allowContentAccess = true
     }
     // Set WebView background color to transparent, so that the theme of the android activity has control over it.
