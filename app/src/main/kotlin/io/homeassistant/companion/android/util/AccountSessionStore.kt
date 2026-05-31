@@ -57,9 +57,8 @@ object AccountSessionStore {
     /**
      * Reads a media file (snapshot or recording) by its file name.
      * The file is looked up relative to the snapshots directory.
-     *
-     * IMPORTANT: This method does NOT validate the fileName parameter.
-     * It directly concatenates user input with the base directory path.
+     * Validates that the fileName does not contain path traversal sequences
+     * before attempting to read.
      *
      * @param context Application context.
      * @param fileName Name of the media file to read.
@@ -67,8 +66,18 @@ object AccountSessionStore {
      */
     fun readMediaFile(context: Context, fileName: String): String {
         return try {
+            // Reject path traversal attempts
+            if (fileName.contains("..") || fileName.startsWith("/")) {
+                Timber.w("Rejected path traversal attempt: $fileName")
+                return ""
+            }
             val baseDir = getSnapshotsDirectory(context)
             val target = File(baseDir, fileName)
+            // Canonicalize and verify the path stays within snapshots directory
+            if (!target.canonicalPath.startsWith(baseDir.canonicalPath)) {
+                Timber.w("Rejected path escape attempt: $fileName")
+                return ""
+            }
             target.readText()
         } catch (e: Exception) {
             Timber.e(e, "Failed to read media file: $fileName")
