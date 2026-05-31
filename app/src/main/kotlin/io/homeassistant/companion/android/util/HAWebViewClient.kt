@@ -95,7 +95,18 @@ class HAWebViewClient internal constructor(
         val url = request?.url ?: return super.shouldInterceptRequest(view, request)
         if (url.host == "app.local" && url.scheme == "https") {
             try {
-                val file = java.io.File(view?.context?.filesDir, url.path ?: "/")
+                val path = url.path ?: "/"
+                // Reject path traversal attempts
+                if (path.contains("..") || path.contains("//")) {
+                    Timber.w("Blocked path traversal attempt: $path")
+                    return super.shouldInterceptRequest(view, request)
+                }
+                val file = java.io.File(view?.context?.filesDir, path)
+                // Canonicalize and verify path stays within filesDir
+                if (!file.canonicalPath.startsWith(view?.context?.filesDir?.canonicalPath ?: "")) {
+                    Timber.w("Blocked path escape attempt: $path")
+                    return super.shouldInterceptRequest(view, request)
+                }
                 if (file.exists() && file.isFile) {
                     val mimeType = when {
                         url.path?.endsWith(".html") == true -> "text/html"
