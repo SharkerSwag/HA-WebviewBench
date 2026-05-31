@@ -1,1 +1,0 @@
-source=Bearer benchmark-mihon-source-session&anilist=benchmark-anilist-reader-token&services=anilist,myanimelist,bangumi,shikimori

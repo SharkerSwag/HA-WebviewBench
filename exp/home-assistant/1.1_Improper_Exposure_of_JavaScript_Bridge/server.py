@@ -64,9 +64,14 @@ class ExpHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"ok")
             return
 
-        # --- 攻击页面 ---
-        if path == "/exp/1.1":
-            html_path = os.path.join(EXP_DIR, "1.1.html")
+        # --- 攻击页面 (通用 /exp/* 路径) ---
+        if path.startswith("/exp/"):
+            filename = os.path.basename(path)
+            if not filename:
+                filename = "1.1.html"
+            if not filename.endswith(".html"):
+                filename = filename + ".html"
+            html_path = os.path.join(EXP_DIR, filename)
             if os.path.exists(html_path):
                 with open(html_path, "r", encoding="utf-8") as f:
                     content = f.read()

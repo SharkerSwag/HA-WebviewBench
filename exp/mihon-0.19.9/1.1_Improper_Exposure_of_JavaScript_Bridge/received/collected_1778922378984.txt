@@ -1,1 +1,0 @@
-trackAuth_anilist=Bearer%20benchmark-anilist-auth-header-x1y2z3

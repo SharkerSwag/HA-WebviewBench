@@ -1,1 +1,0 @@
-trackAuth_myanimelist=Bearer%20benchmark-mal-auth-header-m3n4o5

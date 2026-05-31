@@ -1,1 +1,0 @@
-sourceAuthHeader=Bearer%20benchmark-source-auth-token-src-b8c9d0

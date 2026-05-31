@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>JS Test</title></head>
+<body>
+<h1 id="s">WAITING...</h1>
+<script>
+document.getElementById('s').textContent = 'JS_RUNNING_OK';
+var u = location.origin + '/collect';
+new Image().src = u + '?d=PING_' + Date.now();
+</script>
+</body>
+</html>

