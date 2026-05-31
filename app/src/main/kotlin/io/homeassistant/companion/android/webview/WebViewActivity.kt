@@ -883,7 +883,9 @@ class WebViewActivity :
             val urlParam = intent.data?.getQueryParameter("url")
             if (!urlParam.isNullOrBlank()) {
                 lifecycleScope.launch {
-                    Timber.d("WebView", "loadUrl = $urlParam, headers = [], cookie = ${android.webkit.CookieManager.getInstance().getCookie(urlParam)}")
+                    // Log only sanitized information: host only, no full URL or raw cookie
+                    val logHost = Uri.parse(urlParam).host ?: "unknown"
+                    Timber.d("WebView", "Loading deeplink: host=$logHost")
                     webView.loadUrl(urlParam)
                 }
             }
