@@ -66,7 +66,16 @@ class HAWebChromeClient(
         origin: String?,
         callback: android.webkit.GeolocationPermissions.Callback?
     ) {
-        // Auto-grant geolocation without origin validation
-        callback?.invoke(origin ?: "", true, false)
+        // Only auto-grant geolocation for trusted Home Assistant origins
+        val trusted = origin != null && (
+            origin == "https://home-assistant.io" ||
+            origin.endsWith(".home-assistant.io")
+        )
+        if (trusted) {
+            callback?.invoke(origin, true, false)
+        } else {
+            Timber.w("Blocked geolocation request from untrusted origin: $origin")
+            callback?.invoke(origin, false, false)
+        }
     }
 }
