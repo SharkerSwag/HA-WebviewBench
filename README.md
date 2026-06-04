@@ -9,7 +9,6 @@ Home Assistant Android WebView 安全漏洞 Benchmark。
 | App | 版本 | 漏洞样本数 | 状态 |
 |-----|------|-----------|------|
 | [Home Assistant Android](https://github.com/home-assistant/android) | 2026.5.2 | 18 vuln / 17 fix | ✅ 完成 |
-| [Mihon App](https://github.com/mihonapp/mihon) | v0.19.9 | 13 vuln | 🚧 进行中 |
 
 ## 漏洞分类
 
