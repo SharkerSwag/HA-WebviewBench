@@ -17,6 +17,10 @@ __pycache__/
 .vscode/
 *.iml
 
+# Personal notes / reports (not part of benchmark)
+webview漏洞分类说明.md
+周报_唐少宇_2026.6.1.md
+
 # OS files
 .DS_Store
 Thumbs.db
