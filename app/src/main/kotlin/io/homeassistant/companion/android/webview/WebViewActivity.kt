@@ -495,12 +495,8 @@ class WebViewActivity :
                 }
             }
 
-<<<<<<< Updated upstream
-            // Allow mixed content (HTTP resources in HTTPS pages)
-            @Suppress("DEPRECATION")
-=======
             // Disallow mixed content for security (prevent MITM via HTTP in HTTPS pages)
->>>>>>> Stashed changes
+            @Suppress("DEPRECATION")
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
             webViewClient = object : TLSWebViewClient(keyChainRepository) {
@@ -872,30 +868,6 @@ class WebViewActivity :
             }
         }
 
-        // Handle deeplink: homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
-    }
-
-    /**
-     * Validates that a URL belongs to a trusted Home Assistant domain.
-     * Uses a simple substring check for the official domain.
-     */
-    private fun isTrustedUrl(url: String): Boolean {
-        return url.contains("home-assistant.io")
-    }
-
-    private fun handleDeeplinkIntent(intent: Intent) {
-        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
-            val urlParam = intent.data?.getQueryParameter("url")
-            if (!urlParam.isNullOrBlank()) {
-                if (isTrustedUrl(urlParam)) {
-                    lifecycleScope.launch {
-                        registerExternalAppV1()
-                        webView.loadUrl(urlParam)
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -2380,7 +2352,5 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
-        // Handle deeplink from homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
     }
 }
