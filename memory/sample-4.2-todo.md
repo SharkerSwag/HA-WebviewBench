@@ -1,30 +1,41 @@
 ---
 name: sample-4.2-todo
-description: 4.2 Insecure Network Content Trust vuln/fix branches not yet written — needs to be created from scratch
+description: 4.2 Insecure Network Content Trust — vuln/fix branches now complete, cleaned, and verified
 metadata:
   type: project
 ---
 
-4.2_Insecure_Network_Content_Trust 的 vuln 和 fix 分支尚未创建。需要根据 design.md 自行编写。
+4.2_Insecure_Network_Content_Trust has been verified and cleaned up (2026-06-07).
 
-## Design requirements (from design.md)
+## Current state
 
-**Vulnerability:** 新增功能15（混合内容加载放宽）+ 新增功能1（HomeAppBridge）+ 官方服务器实现3
+- **vuln branch**: MIXED_CONTENT_ALWAYS_ALLOW + HomeAppBridge (getDeviceState, sendCommand). No deeplink.
+- **fix branch**: MIXED_CONTENT_NEVER_ALLOW. HomeAppBridge removed. No deeplink.
+- Both compile successfully (BUILD SUCCESSFUL).
+- Exploit server exists at `exp/home-assistant/4.2_Insecure_Network_Content_Trust/` with widget.js + 4.2.html.
 
-WebView 设置 `MIXED_CONTENT_ALWAYS_ALLOW`，HTTPS 面板页面中可加载 HTTP JS 资源。攻击者 MITM 篡改 HTTP 响应注入恶意 JS 调用 `HomeAppBridge.sendCommand` 执行未授权操作。
+## Cleanup done
 
-需要：
-- 新增功能15: `settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW`
-- 新增功能1: 添加 HomeAppBridge（getDeviceState + sendCommand）
-- 官方服务器实现3: 混合内容 CDN 服务器
+1. Resolved merge conflicts in fix branch (MIXED_CONTENT_NEVER_ALLOW was correct)
+2. Removed incorrectly added deeplink code (isTrustedUrl, handleDeeplinkIntent) from fix branch
+3. Fixed settings.gradle.kts to include microwakeword module
+4. Updated benchmark_samples.json with corrected description and mock server info
 
-**Fix approach:** Remove `MIXED_CONTENT_ALWAYS_ALLOW` or restrict to trusted domains only.
+## Attack chain (no deeplink)
+
+1. User loads legitimate HA frontend over HTTPS (normal app flow)
+2. Frontend includes `<script src="http://cdn.home-assistant.io/integrations/widget.js">`
+3. MIXED_CONTENT_ALWAYS_ALLOW permits HTTP resource in HTTPS page
+4. Attacker ARP-spoofs / MITMs the HTTP request to widget.js
+5. Injected JS calls HomeAppBridge.sendCommand() / getDeviceState()
+6. Data exfiltrated to attacker server
 
 ## How to apply
 
-When we reach 4.2 in the optimization queue, refer to:
-- `apps/home-assistant/design.md` for full design specification
-- [[WebviewBench_sample_skill]] for the build workflow
-- Previous samples (1.1, 2.1.1) as templates for vuln/fix structure
+Verification requires HTTPS test page + MITM setup. For code-level verification:
+- vuln has MIXED_CONTENT_ALWAYS_ALLOW + HomeAppBridge ✅
+- fix has MIXED_CONTENT_NEVER_ALLOW, no HomeAppBridge ✅
 
-**Why:** The user confirmed 4.2 was never implemented — needs full creation, not just optimization.
+**Why:** The branches existed but had merge conflicts, incorrectly added deeplink code, and a broken settings.gradle.kts. Now clean and buildable.
+
+Related: [[deeplink-alignment-pass]]
