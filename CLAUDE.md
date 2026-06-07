@@ -35,9 +35,19 @@ Each sample has:
 **Build an Android APK** (run inside a sample worktree):
 ```powershell
 cd apps/home-assistant/samples/<sample_id>/
-.\gradlew.bat assembleDebug -x :microwakeword:* -x :automotive:* -x :wear:*
+.\gradlew.bat assembleDebug -x :microwakeword:buildCMakeDebug \
+  -x :microwakeword:buildCMakeDebug[arm64-v8a] \
+  -x :microwakeword:buildCMakeDebug[armeabi-v7a] \
+  -x :microwakeword:buildCMakeDebug[x86] \
+  -x :microwakeword:buildCMakeDebug[x86_64]
 ```
-The `-x` flags exclude modules with native build issues (CMake dependencies, automotive/wear variants).
+
+**Build environment notes:**
+- Requires **JDK 21** (set `JAVA_HOME` — the system default may point to a JRE that's missing `java.management`). CMake 4.1.2 must be installed via Android SDK Manager.
+- Windows **260-char path limit** can cause CMake FetchContent failures on deeply-nested worktree paths. Two options:
+  1. Enable long paths: `Set-ItemProperty HKLM:\...\FileSystem -Name LongPathsEnabled -Value 1` (needs reboot)
+  2. Map a virtual drive: `subst W: "<worktree_path>"` then build from `W:\`
+- The Gradle `-x` flags skip the microwakeword native module (wake-word detection). This is a build-time exclusion, not a source modification — the source code remains intact.
 
 **Run an exploit server:**
 ```bash
