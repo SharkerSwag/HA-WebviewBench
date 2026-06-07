@@ -348,13 +348,9 @@ class WebViewActivity :
     }
 
     private var insetsContext: InsetsContext? = null
-    private var isDeeplinkFlow = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
-            isDeeplinkFlow = true
-        }
         if (
             intent.extras?.containsKey(EXTRA_SHOW_WHEN_LOCKED) == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
@@ -387,18 +383,16 @@ class WebViewActivity :
         webView = WebView(this)
 
         lifecycleScope.launch {
-            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
+            appLocked.value = presenter.isAppLocked()
         }
 
-        if (isDeeplinkFlow) {
-            webView.defaultSettings()
-            webView.settings.apply {
-                allowFileAccess = true
-                allowContentAccess = true
-                allowUniversalAccessFromFileURLs = true
-            }
-            setContentView(webView)
-        } else {
+        // Allow content:// access for device configuration providers
+        webView.settings.apply {
+            allowFileAccess = true
+            allowContentAccess = true
+            allowUniversalAccessFromFileURLs = true
+        }
+
         setContent {
             val coroutineScope = rememberCoroutineScope()
             val player by remember { exoPlayer }
@@ -874,22 +868,6 @@ class WebViewActivity :
                         else -> {} // Do nothing
                     }
                 }
-            }
-        }        } // end else (setContent)
-
-
-
-        // Handle deeplink: homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
-    }
-
-    private fun handleDeeplinkIntent(intent: Intent) {
-        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
-            val urlParam = intent.data?.getQueryParameter("url")
-            if (!urlParam.isNullOrBlank()) {
-                lifecycleScope.launch {
-                    webView.loadUrl(urlParam)
-                    }
             }
         }
     }
@@ -1369,14 +1347,13 @@ class WebViewActivity :
 
     override fun onResume() {
         super.onResume()
-        if (isDeeplinkFlow) return
         lifecycleScope.launch {
             // if null it means that the settings were not yet read so we should not recreate
             if (currentAutoplay != null && currentAutoplay != presenter.isAutoPlayVideoEnabled()) {
                 recreate()
             }
 
-            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
+            appLocked.value = presenter.isAppLocked()
             presenter.updateActiveServer()
         }
 
@@ -1584,7 +1561,7 @@ class WebViewActivity :
     }
 
     override suspend fun unlockAppIfNeeded() {
-        appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
+        appLocked.value = presenter.isAppLocked()
         if (appLocked.value) {
             if (!unlockingApp) {
                 authenticator.authenticate(getString(commonR.string.biometric_title))
@@ -2377,7 +2354,5 @@ class WebViewActivity :
                 intent.removeExtra(EXTRA_SERVER)
             }
         }
-        // Handle deeplink from homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
     }
 }
