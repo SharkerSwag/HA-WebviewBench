@@ -7,3 +7,5 @@
 - [Optimize 1.3 Sample](memory/optimize-1.3-sample.md) — CMake revert on both, encoding fix on fix; proper JS injection escaping
 - [Optimize 2.1.1 Sample](memory/optimize-2.1.1-sample.md) — Fix: CMake revert + encoding; Vuln: encoding only
 - [Optimize 2.1.2/4.1](memory/optimize-pass2.md) — Encoding fix on both branches (fix logic was already done in round 1)
+- [Batch Optimization Pass 3](memory/optimize-pass3.md) — Remaining 10 samples: encoding-only fixes, all clean of IDE/CMake artifacts
+- [4.2 TODO](memory/sample-4.2-todo.md) — 4.2 vuln/fix branches not yet created; will need full implementation from design.md
