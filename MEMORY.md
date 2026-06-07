@@ -1,0 +1,4 @@
+- [Fix 2.1.2 Content Access Misconfiguration](memory/fix-2.1.2-content-access.md) — Removed insecure settings from deeplink flow, previous fix only changed comments
+- [Fix 4.1 TLS Certificate Validation Error](memory/fix-4.1-tls-certificate.md) — Removed LAN IP auto-bypass dead code, reverted to clean SSL error handling
+- [Build Environment](memory/build-environment.md) — JAVA_HOME override, Gradle 9.5.0 wildcard issue, CMake path length workaround
+- [Shared Deeplink Infrastructure](memory/shared-deeplink-infra.md) — Deeplink is shared infra, don't remove in fix branches

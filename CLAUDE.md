@@ -1,0 +1,115 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project overview
+
+HA-WebviewBench is a security benchmark for evaluating SAST/DAST tools and AI code audit models on Android WebView vulnerability detection. It provides curated, realistic WebView vulnerability samples (vulnerable + fixed versions) built on real open-source Android apps. Each sample targets exactly one minimum classification of WebView vulnerability.
+
+Covered apps: Home Assistant Android 2026.5.2 (18 samples, complete) and Mihon v0.19.9 (13 samples, in progress).
+
+## Repository layout (two-tier)
+
+The root repo (`main` branch) holds documentation, exploit scripts, and benchmark metadata indices. It does **not** contain Android source code — that lives in gitignored per-app sub-repos under `apps/<app>/base/`, organized as git worktrees.
+
+```
+apps/<app>/
+  base/              # Main worktree — clean base source. Never modified directly.
+  BASE_COMMIT         # SHA of the clean base commit all samples branch from
+  samples/<id>/       # Per-sample git worktree (18 for HA). vuln + fix share one worktree.
+  server/<id>/        # Per-sample mock "official server" (redirect pages, static resources)
+  design.md           # Concrete design: new features, servers, and sample designs for this app
+exp/<app>/<id>/       # Exploit server (server.py + HTML attack pages) per sample
+exp/template/         # Reusable exploit server template
+samples/<app>/        # Per-app benchmark_samples.json metadata index
+```
+
+Each sample has:
+- A **vuln branch** (`vuln/<id>`) and **fix branch** (`fix/<id>`) in the app's base git repo
+- A single git **worktree** at `apps/<app>/samples/<id>/` shared between vuln and fix
+- An entry in `samples/<app>/benchmark_samples.json`
+- An exploit server at `exp/<app>/<id>/`
+
+## Common commands
+
+**Build an Android APK** (run inside a sample worktree):
+```powershell
+cd apps/home-assistant/samples/<sample_id>/
+.\gradlew.bat assembleDebug -x :microwakeword:* -x :automotive:* -x :wear:*
+```
+The `-x` flags exclude modules with native build issues (CMake dependencies, automotive/wear variants).
+
+**Run an exploit server:**
+```bash
+cd exp/home-assistant/<sample_id>/
+python server.py
+# HTTP on :8000 (attack pages, data collection, redirect, file upload)
+# HTTPS on :8443 (self-signed cert, for TLS bypass scenarios)
+```
+
+**Trigger an exploit via ADB deeplink:**
+```bash
+adb shell am start -a android.intent.action.VIEW \
+  -d "homeassistant://webview?url=http://<HOST_IP>:8000/exp/<sample_id>"
+```
+For the HA app's debug build, use package `io.homeassistant.companion.android.debug`.
+
+**Verify exploit success:** Check the `received/` directory under the exploit server for exfiltrated data.
+
+**List git worktrees** (from the base repo):
+```bash
+cd apps/home-assistant/base/
+git worktree list
+```
+
+## Vulnerability categories (5 classes, 17 sub-types)
+
+| Category | IDs | Description |
+|---|---|---|
+| JS Interaction | 1.1–1.3 | Bridge exposure, insecure params, dynamic script injection |
+| Resource Access Control | 2.1.1–2.4 | File/content access config, URL validation bypass, redirect, scheme handling, request interception |
+| Event Callbacks | 3.1.1–3.1.4 | File selection, download, permission request, JS dialog callbacks |
+| Network Trust | 4.1–4.2 | TLS certificate bypass, mixed content |
+| Data Leakage | 5.1–5.2 | Cookie/token leakage, debug log leakage |
+
+Full classification with code examples: `webview漏洞分类说明.md`.
+
+## Architecture: how a sample is built
+
+Samples are constructed by AI agents following two skill documents:
+
+1. **`WebviewBench_design_skill.md`** — Design phase: analyzes a real WebView component, designs atomic "new features" that introduce vulnerability-triggering capabilities while maintaining business plausibility. Outputs a `design.md` like `apps/home-assistant/design.md`.
+
+2. **`WebviewBench_sample_skill.md`** — Build phase: for one sample at a time, creates a git worktree from BASE_COMMIT, applies the vulnerability code, compiles, commits to `vuln/<id>`, updates `benchmark_samples.json`, optionally builds the fix branch, and optionally writes the exploit server.
+
+Key design principles:
+- **Atomic changes only** — each "new feature" is a single code change (one bridge, one callback, one config tweak). A sample may combine multiple features, but each is defined independently.
+- **Business-plausible** — vulnerabilities must look like legitimate features (device control bridge, help-center redirect, file preview, notification preferences).
+- **Mock data in assets** — sensitive values (tokens, cookies) are read from `assets/benchmark_mock_data.json` via business-named classes (e.g., `AccountSessionStore`), never hardcoded.
+- **Clear security consequence** — every sample must demonstrably leak tokens, read private files, trigger system actions, etc. "Returns username" or "shows toast" is insufficient.
+
+## Exploit server template
+
+`exp/template/server.py` is the reusable base. Endpoints:
+- `GET /collect?d=<data>` — universal data collection
+- `POST /upload` — file upload (for file-chooser exploits)
+- `GET /redirect?url=<url>` — 302 redirect (for redirect-based exploits)
+- `GET /exp/<vid>` — serves `exp/<vid>.html` attack page
+- `GET /evil.js` — serves malicious JS (for mixed-content exploits)
+- `GET /malicious.apk` — serves fake APK (for download-callback exploits)
+
+Per-sample exploit servers copy/adjust this template. Exploit data lands in `received/` (gitignored).
+
+## Key design documents
+
+- `apps/home-assistant/design.md` — complete HA design: 17 atomic new features, 4 mock official servers, 18 sample designs, plus a table of universal fixes applied across all deeplink-based samples.
+- `webview漏洞分类说明.md` — canonical vulnerability taxonomy with code examples for each sub-type.
+- `applist.md` — candidate apps for future benchmark expansion.
+- `apps/home-assistant/server/` — mock official server implementations (e.g., notification polling server for sample 1.3).
+
+## Git workflow
+
+- **Never modify** `apps/<app>/base/` directly. All sample work happens in per-sample worktrees.
+- vuln and fix branches for a sample share a single worktree — switch branches in that worktree, don't create a second.
+- `benchmark_samples.json` records branch names, worktree paths, build commands, status, and server references per sample.
+- Exploit code under `exp/` is not git-managed — no branches, no commits, just files on disk.
