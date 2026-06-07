@@ -45,7 +45,8 @@ class H(http.server.SimpleHTTPRequestHandler):
             return
         # OAuth redirect endpoint (official server simulation)
         if p.path.startswith("/oauth/callback"):
-            redirect_url = "/exp/2.2.2.html"
+            q = urllib.parse.parse_qs(p.query)
+            redirect_url = q.get("redirect_uri", ["/exp/2.2.2.html"])[0]
             print(f"[*] 302 redirect: {p.path} -> {redirect_url}")
             self.send_response(302)
             self.send_header("Location", redirect_url)
