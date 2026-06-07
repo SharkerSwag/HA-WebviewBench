@@ -288,7 +288,6 @@ class WebViewActivity :
     private var isRelaunching = false
     private var alertDialog: AlertDialog? = null
     private var loadUrlJob: Job? = null
-    private var deeplinkUrl: Uri? = null
     private var isVideoFullScreen = false
     private var videoHeight = 0
     private var firstAuthTime: Long = 0
@@ -868,31 +867,8 @@ class WebViewActivity :
             }
         }
 
-        // Handle deeplink: homeassistant://webview?url=<url>
-        handleDeeplinkIntent(intent)
-
         // Start polling the official Home Assistant notification service for alerts
         startNotificationPolling()
-    }
-
-    /**
-     * Parses and loads a URL from a deeplink intent with scheme "homeassistant" and host "webview".
-     * Directly loads the URL and registers the HomeAppBridge, bypassing the server configuration requirement.
-     *
-     * @param intent The intent potentially containing a deeplink URL.
-     */
-    private fun handleDeeplinkIntent(intent: Intent) {
-        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
-            val urlParam = intent.data?.getQueryParameter("url")
-            if (!urlParam.isNullOrBlank()) {
-                deeplinkUrl = Uri.parse(urlParam)
-                // Directly load the deeplink URL without requiring a configured HA server
-                lifecycleScope.launch {
-                    registerHomeAppBridge()
-                    webView.loadUrl(deeplinkUrl.toString())
-                }
-            }
-        }
     }
 
     /**
@@ -1651,9 +1627,6 @@ class WebViewActivity :
                     }
                 }
                 intent.removeExtra(EXTRA_PATH)
-
-                // Handle deeplink from homeassistant://webview?url=<url>
-                handleDeeplinkIntent(intent)
 
                 presenter.load(lifecycle, path, isInternalOverride)
             }
@@ -2458,7 +2431,5 @@ class WebViewActivity :
             }
         }
 
-        // Handle deeplink from homeassistant://webview?url=<url> when activity is already running
-        handleDeeplinkIntent(intent)
     }
 }
