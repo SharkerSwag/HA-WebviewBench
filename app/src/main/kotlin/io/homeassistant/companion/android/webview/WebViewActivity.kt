@@ -348,9 +348,13 @@ class WebViewActivity :
     }
 
     private var insetsContext: InsetsContext? = null
+    private var isDeeplinkFlow = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (intent.data != null && intent.data?.scheme == "homeassistant" && intent.data?.host == "webview") {
+            isDeeplinkFlow = true
+        }
         if (
             intent.extras?.containsKey(EXTRA_SHOW_WHEN_LOCKED) == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
@@ -383,9 +387,13 @@ class WebViewActivity :
         webView = WebView(this)
 
         lifecycleScope.launch {
-            appLocked.value = presenter.isAppLocked()
+            appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
         }
 
+        if (isDeeplinkFlow) {
+            webView.defaultSettings()
+            setContentView(webView)
+        } else {
         setContent {
             val coroutineScope = rememberCoroutineScope()
             val player by remember { exoPlayer }
@@ -863,6 +871,7 @@ class WebViewActivity :
                 }
             }
         }
+        } // end else (setContent)
 
         // Handle deeplink: homeassistant://webview?url=<url>
         handleDeeplinkIntent(intent)
@@ -1366,6 +1375,7 @@ class WebViewActivity :
 
     override fun onResume() {
         super.onResume()
+        if (isDeeplinkFlow) return
         lifecycleScope.launch {
             // if null it means that the settings were not yet read so we should not recreate
             if (currentAutoplay != null && currentAutoplay != presenter.isAutoPlayVideoEnabled()) {
@@ -1580,7 +1590,7 @@ class WebViewActivity :
     }
 
     override suspend fun unlockAppIfNeeded() {
-        appLocked.value = presenter.isAppLocked()
+        appLocked.value = if (isDeeplinkFlow) false else presenter.isAppLocked()
         if (appLocked.value) {
             if (!unlockingApp) {
                 authenticator.authenticate(getString(commonR.string.biometric_title))
