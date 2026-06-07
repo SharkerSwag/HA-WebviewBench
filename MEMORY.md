@@ -2,3 +2,4 @@
 - [Fix 4.1 TLS Certificate Validation Error](memory/fix-4.1-tls-certificate.md) — Removed LAN IP auto-bypass dead code, reverted to clean SSL error handling
 - [Build Environment](memory/build-environment.md) — JAVA_HOME override, Gradle 9.5.0 wildcard issue, CMake path length workaround
 - [Optimize 1.1 Sample](memory/optimize-1.1-sample.md) — Deleted IDE artifacts, reverted CMake source hacks, fixed encoding corruption
+- [Verification Workflow](memory/verification-workflow.md) — End-to-end emulator verification: vuln leaks data, fix blocks it
