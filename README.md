@@ -8,7 +8,7 @@ Home Assistant Android WebView 安全漏洞 Benchmark。
 
 | App | 版本 | 漏洞样本数 | 状态 |
 |-----|------|-----------|------|
-| [Home Assistant Android](https://github.com/home-assistant/android) | 2026.5.2 | 18 vuln / 17 fix | ✅ 完成 |
+| [Home Assistant Android](https://github.com/home-assistant/android) | 2026.5.2 | 18 vuln / 18 fix | ✅ 完成 |
 | [Mihon App](https://github.com/mihonapp/mihon) | v0.19.9 | 13 vuln | 🚧 进行中 |
 
 ## 漏洞分类
@@ -52,8 +52,8 @@ Home Assistant Android WebView 安全漏洞 Benchmark。
 │           └── ...
 └── apk/                               # [gitignored] 编译产物
     └── home-assistant/
-        ├── vuln/                      # 17 个漏洞 APK
-        └── fix/                       # 17 个修复 APK
+        ├── vuln/                      # 18 个漏洞 APK
+        └── fix/                       # 18 个修复 APK
 ```
 
 ## 分支说明
@@ -66,7 +66,7 @@ Home Assistant Android WebView 安全漏洞 Benchmark。
 ### 源码分支（Home Assistant Android base 仓库）
 - **`master`** — 干净基础源码（未修改的原版 App）
 - **`vuln/<id>`** — 18 个漏洞版本分支（如 `vuln/1.1_Improper_Exposure_of_JavaScript_Bridge`）
-- **`fix/<id>`** — 17 个修复版本分支（如 `fix/2.2.1_Insufficient_URL_Source_Validation`）
+- **`fix/<id>`** — 18 个修复版本分支（如 `fix/2.2.1_Insufficient_URL_Source_Validation`）
 
 检出对应分支即可获得该样本的完整 Android 项目源码。
 
@@ -104,12 +104,14 @@ python server.py
 
 ### 4. 触发漏洞
 
-通过 ADB 发送 Deeplink：
+大多数样本通过 ADB 发送 Deeplink 触发：
 
 ```bash
 adb shell am start -a android.intent.action.VIEW \
   -d "homeassistant://webview?url=http://<HOST_IP>:8000/exp/<sample_id>"
 ```
+
+部分样本（1.3、2.1.2、4.2）不使用 Deeplink 入口，攻击路径分别为通知轮询注入、ContentProvider 访问、混合内容 MITM。详见各样本的 EXP readme。
 
 ## 本地开发
 
@@ -125,10 +127,19 @@ git checkout fix/1.1_Improper_Exposure_of_JavaScript_Bridge    # 修复版
 
 ### 编译 APK
 
+需要 **JDK 21**（`JAVA_HOME` 指向完整 JDK，非 JRE）。
+
 ```bash
 cd apps/home-assistant/samples/<sample_id>/
-./gradlew assembleDebug
+JAVA_HOME="/path/to/jdk-21" ./gradlew :app:assembleFullDebug \
+  -x ':microwakeword:buildCMakeDebug' \
+  '-x:microwakeword:buildCMakeDebug[arm64-v8a]' \
+  '-x:microwakeword:buildCMakeDebug[armeabi-v7a]' \
+  '-x:microwakeword:buildCMakeDebug[x86]' \
+  '-x:microwakeword:buildCMakeDebug[x86_64]'
 ```
+
+> `-x` 参数排除 microwakeword 原生模块（依赖 CMake 4.1.2），不影响漏洞代码。Windows 需要启用长路径支持（260 字符限制）。
 
 ## License
 
