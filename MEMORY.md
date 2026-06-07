@@ -5,3 +5,4 @@
 - [Verification Workflow](memory/verification-workflow.md) — End-to-end emulator verification: vuln leaks data, fix blocks it
 - [Optimize 1.2 Sample](memory/optimize-1.2-sample.md) — Encoding fix on fix branch, vuln was clean; proper fix validated
 - [Optimize 1.3 Sample](memory/optimize-1.3-sample.md) — CMake revert on both, encoding fix on fix; proper JS injection escaping
+- [Optimize 2.1.1 Sample](memory/optimize-2.1.1-sample.md) — Fix: CMake revert + encoding; Vuln: encoding only
