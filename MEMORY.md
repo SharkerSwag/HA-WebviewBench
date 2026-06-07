@@ -8,4 +8,5 @@
 - [Optimize 2.1.1 Sample](memory/optimize-2.1.1-sample.md) — Fix: CMake revert + encoding; Vuln: encoding only
 - [Optimize 2.1.2/4.1](memory/optimize-pass2.md) — Encoding fix on both branches (fix logic was already done in round 1)
 - [Batch Optimization Pass 3](memory/optimize-pass3.md) — Remaining 10 samples: encoding-only fixes, all clean of IDE/CMake artifacts
+- [Deeplink Alignment Pass](memory/deeplink-alignment-pass.md) — Aligned deeplink (feature 5) across 4 samples to match design.md: 1.2/2.2.2 got isDeeplinkFlow, 1.3/2.1.2 had deeplink removed
 - [4.2 TODO](memory/sample-4.2-todo.md) — 4.2 vuln/fix branches not yet created; will need full implementation from design.md

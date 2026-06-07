@@ -331,9 +331,18 @@
         "vuln": "compiled",
         "fix": "compiled"
       },
-      "vulnerability_description": "settings.mixedContentMode = MIXED_CONTENT_ALWAYS_ALLOW 允许 HTTPS 页面加载 HTTP 资源，攻击者通过 Deeplink 加载恶意页面可利用混合内容注入窃取敏感数据。",
-      "mock_data": null,
-      "official_server": null
+      "vulnerability_description": "WebView 设置 MIXED_CONTENT_ALWAYS_ALLOW 允许 HTTPS 面板页面加载 HTTP 资源。正常 App 流程加载 HA 面板后，面板中引用的 HTTP CDN 脚本可被 MITM 篡改，注入恶意 JS 调用 HomeAppBridge.sendCommand 执行未授权设备控制。无 deeplink 入口，攻击依赖局域网 MITM。",
+      "mock_data": "assets/benchmark_mock_data.json",
+      "official_server": {
+        "path": "exp/home-assistant/4.2_Insecure_Network_Content_Trust",
+        "hosts": [
+          "cdn.home-assistant.io"
+        ],
+        "routes": [
+          "/integrations/widget.js"
+        ],
+        "status": "implemented"
+      }
     },
     {
       "id": "5.1_Cookie_Leakage",
