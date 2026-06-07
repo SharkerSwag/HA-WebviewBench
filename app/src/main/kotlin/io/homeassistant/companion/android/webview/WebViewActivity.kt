@@ -392,11 +392,6 @@ class WebViewActivity :
 
         if (isDeeplinkFlow) {
             webView.defaultSettings()
-            webView.settings.apply {
-                allowFileAccess = true
-                allowContentAccess = true
-                allowUniversalAccessFromFileURLs = true
-            }
             setContentView(webView)
         } else {
         setContent {
